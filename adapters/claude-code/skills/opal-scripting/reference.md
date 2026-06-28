@@ -75,29 +75,49 @@ Shapes:
 - `roundedRect(x, y, w, h, radius, color)`
 - `roundedRectVarying(x, y, w, h, tl, tr, br, bl, color)`
 - `circle(cx, cy, radius, color)`
-- `rectGradient(x, y, w, h, c1, c2, ...)`
+- `rainbowRect(x, y, w, h)` — animated rainbow fill (exactly 4 args).
+
+Gradients (`angle` is in degrees):
+
+- `rectGradient(x, y, w, h, color1, color2, angle)`
+- `roundedRectGradient(x, y, w, h, radius, color1, color2, angle)`
+- `roundedRectVaryingGradient(x, y, w, h, tl, tr, br, bl, color1, color2, angle)`
+
+Outlines / strokes:
+
 - `rectOutline(x, y, w, h, thickness, color)`
 - `roundedRectOutline(x, y, w, h, radius, thickness, color)`
-- `rainbowRect(x, y, w, h, ...)`
+- `roundedRectOutlineVarying(x, y, w, h, tl, tr, br, bl, thickness, color)`
+- `rectStroke(x, y, w, h, strokeThickness, color, strokeColor)`
+- `rectOutlineStroke(x, y, w, h, outlineThickness, strokeThickness, outlineColor, strokeColor)`
+
+Composite effects:
+
 - `shadow(x, y, w, h, radius, blur, offX, offY, color)`
 - `blurFill(x, y, w, h, radius)` — frosted blur behind a region.
-- `glowFill(x, y, w, h, ...)`
+- `blurFillVarying(x, y, w, h, tl, tr, br, bl)`
+- `glowFill(x, y, w, h, radius)` — fills with the bloom-pass texture (5 args).
+- `innerGlow(x, y, w, h, radius, spread, color)`
 
 Text (font is one of `"productsans-medium"`, `"productsans-bold"`,
 `"materialicons-regular"`):
 
-- `text(font, str, x, y, size, color)` → returns advance width.
-- `textShadow(...)`, `textGradient(...)`
-- `textWidth(font, str, size)` → number
-- `textHeight(font, size)` → number
-- `wrapText(font, str, size, maxWidth)` , `trimText(font, str, size, maxWidth)`
+- `text(fontName, text, x, y, size, color)` → returns advance width.
+- `textShadow(fontName, text, x, y, size, color)` → returns advance width.
+- `textGradient(fontName, text, x, y, size, color1, color2)`
+- `textWidth(fontName, text, size)` → number
+- `textHeight(fontName, text, size)` → number — note `text` is required.
+- `wrapText(fontName, text, width, size)` → `String[]` — note order is
+  `text, width, size`; the result has `.length` and index access.
+- `trimText(fontName, text, width, size)` → `String` (adds an ellipsis if
+  truncated) — note order is `text, width, size`.
 
-Images:
+Images (all `radius` args are **required**, not optional):
 
 - `loadImage(path)` → handle (check `handle.isValid()`).
 - `destroyImage(handle)`
-- `image(handle, x, y, w, h[, radius])`
-- `imageTinted(handle, x, y, w, h, color[, radius])`
+- `image(handle, x, y, w, h, radius)`
+- `imageTinted(handle, x, y, w, h, radius, tint)` — `radius` comes before `tint`.
 
 Vector paths:
 
@@ -105,17 +125,32 @@ Vector paths:
   `cubicTo(c1x, c1y, c2x, c2y, x, y)`, `closePath()`
 - `strokeColor(color)`, `strokeWidth(w)`, `stroke()`
 
-Transform / clip:
+Transform / clip — `scale`, `rotate`, and `scissor` are **scoped**: they take a
+rect plus a `content` function and run `save → content() → restore`, so draws
+made inside the callback are transformed/clipped and nothing leaks out. Draw
+relative to the rect you pass.
 
-- `scale(s)`, `rotate(rad)`, `globalAlpha(a)`, `scissor(x, y, w, h)`
+- `scale(factor, x, y, w, h, content)` — uniform scale; pivot is the rect center.
+- `rotate(degrees, x, y, w, h, content)` — rotation in **degrees**; origin is
+  translated to the rect center, so the callback draws relative to that origin.
+- `scissor(x, y, w, h, content)` — clip the callback's draws to the rect.
+- `globalAlpha(alpha)` — set a 0.0–1.0 alpha multiplier for subsequent draws this
+  frame (not scoped; not a callback).
 
-Color helpers (all return packed ints — never use raw `0xAARRGGBB` literals):
+```js
+renderer.scissor(x, y, w, h, function () {
+    renderer.rect(x, y, 9999, 9999, C.bg); // clipped to (x, y, w, h)
+});
+```
 
-- `color(r, g, b[, a])`
-- `withAlpha(color, a)`
-- `applyOpacity(color, factor)`
-- `interpolate(colorA, colorB, t)`
-- `darker(color, f)` , `brighter(color, f)`
+Color helpers (all return packed ARGB ints — never use raw `0xAARRGGBB` literals):
+
+- `color(r, g, b[, a])` — channels 0–255; `a` defaults to 255 (opaque).
+- `withAlpha(color, alpha)` — replace the alpha channel; **`alpha` is 0–255**.
+- `applyOpacity(color, factor)` — scale the alpha by a **0.0–1.0** `factor`. Use
+  this (not `withAlpha`) to dim by a fraction.
+- `interpolate(color1, color2, factor)` — blend; `factor` 0.0→color1, 1.0→color2.
+- `darker(color, factor)` , `brighter(color, factor)`
 
 ## Palette
 

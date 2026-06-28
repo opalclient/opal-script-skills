@@ -64,7 +64,16 @@ current value — never cache them at registration time.
 | `module.addBool(name, def)` | `module.getBool(name)` | `module.setBool(name, v)` |
 | `module.addNumber(name, def, min, max, step)` | `module.getNumber(name)` | `module.setNumber(name, v)` |
 | `module.addMode(name, [opts])` | `module.getMode(name)` / `module.isModeEqual(name, opt)` | — |
-| `module.addGroup(name)` | (visual grouping of following settings) | — |
+| `module.addGroup(name, [settingNames])` | (nests already-added settings under a header) | — |
+
+`addGroup` takes the group name and an **array of names of settings you already
+added** — it moves those into a collapsible group, so declare them first:
+
+```js
+module.addBool("Tower", true);
+module.addNumber("Speed", 1, 0, 5, 0.1);
+module.addGroup("Movement", ["Tower", "Speed"]); // group existing settings
+```
 
 ## Events
 
@@ -109,7 +118,10 @@ Common primitives: `rect`, `roundedRect`, `roundedRectVarying`, `circle`,
 Images: `loadImage` / `destroyImage` / `image` / `imageTinted`. Vector paths:
 `beginPath` / `moveTo` / `lineTo` / `quadTo` / `cubicTo` / `closePath` /
 `strokeColor` / `strokeWidth` / `stroke`. Transforms / clipping: `scale`,
-`rotate`, `globalAlpha`, `scissor`.
+`rotate`, `scissor` (each is **scoped** — you pass a pivot/clip rect plus a
+content function it runs the draws inside; `rotate` takes **degrees**) and
+`globalAlpha(alpha)` (a 0.0–1.0 multiplier for the rest of the frame). See
+`reference.md` for exact signatures.
 
 Fonts: `"productsans-medium"`, `"productsans-bold"`, `"materialicons-regular"`.
 
@@ -130,8 +142,10 @@ renderer.text("productsans-bold", "Score", x + 12, y + 8, 8, C.text);
 ```
 
 Color helpers all return packed ints: `renderer.color(r,g,b[,a])`,
-`withAlpha(color, a)`, `applyOpacity(color, factor)`, `interpolate(a, b, t)`,
-`darker(color, f)`, `brighter(color, f)`.
+`withAlpha(color, a)` (alpha is **0–255**), `applyOpacity(color, factor)`
+(factor is **0.0–1.0**), `interpolate(a, b, t)`, `darker(color, f)`,
+`brighter(color, f)`. To dim a color by a fraction use `applyOpacity` — passing
+a fractional `0.45` to `withAlpha` floors to alpha `0` (fully transparent).
 
 ## Palette views (flagship)
 
@@ -177,7 +191,7 @@ animation (0..1).
 const id = overlay.createIsland({
     width: 150, height: 28, priority: 25,
     render: function (x, y, w, h, progress) {
-        renderer.shadow(x, y, w, h, 14, 18, 0, 4, renderer.withAlpha(renderer.color(0, 0, 0), 0.45));
+        renderer.shadow(x, y, w, h, 14, 18, 0, 4, renderer.applyOpacity(renderer.color(0, 0, 0), 0.45));
         renderer.blurFill(x, y, w, h, 14);
         renderer.text("productsans-bold", "Active", x + 12, y + 10, 8, renderer.color(255, 255, 255));
     },
