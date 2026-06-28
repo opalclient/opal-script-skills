@@ -9,13 +9,7 @@
 //
 // Run via `npx opal-skills ...` or directly as `node bin/install.mjs ...`.
 
-import {
-    existsSync,
-    mkdirSync,
-    readdirSync,
-    readFileSync,
-    writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
