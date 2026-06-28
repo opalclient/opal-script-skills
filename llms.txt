@@ -1,0 +1,50 @@
+# opal-script-skills
+
+> Portable AI-assistant skills for writing Opal (Minecraft utility client)
+> JavaScript scripts, plus a dependency-free cross-AI installer. The skill
+> teaches the real Opal GraalVM-JS scripting API so assistants stop inventing
+> methods.
+
+This is a small Node (ESM) package. The skill in `skills/opal-scripting/` is the
+source of truth; everything else delivers it.
+
+## Skill (source of truth)
+
+- [SKILL.md](skills/opal-scripting/SKILL.md): the skill — script structure, the
+  module/settings/event model, the renderer canvas and the color rule, palette
+  command-palette views, dynamic islands, the full-trust security model, and a
+  common-mistakes list.
+- [reference.md](skills/opal-scripting/reference.md): condensed full API surface
+  (globals, events, renderer primitives, settings, palette, overlay, keys).
+- [palette-views.md](skills/opal-scripting/palette-views.md): a complete worked
+  `palette.createView` example.
+
+## Installer
+
+- [bin/install.mjs](bin/install.mjs): `opal-skills add [--target <t>] [--dir <p>] [--all]`
+  and `opal-skills list`. Renders the skill into per-assistant surfaces
+  (claude-code, codex, gemini, copilot, cursor, windsurf, generic). No deps, no
+  network, idempotent.
+- [test/install.test.mjs](test/install.test.mjs): `node --test` coverage.
+
+## Manual adapters
+
+- [adapters/claude-code](adapters/claude-code/): Claude Code plugin form.
+- [adapters/codex/AGENTS.md](adapters/codex/AGENTS.md)
+- [adapters/gemini/GEMINI.md](adapters/gemini/GEMINI.md)
+- [adapters/copilot/.github/copilot-instructions.md](adapters/copilot/.github/copilot-instructions.md)
+
+## Project
+
+- [README.md](README.md): what this is and how to install per assistant.
+- [CLAUDE.md](CLAUDE.md): mental model and rules for changing this repo.
+- [SECURITY.md](SECURITY.md): the full-trust script model and reporting.
+- [CONTRIBUTING.md](CONTRIBUTING.md): how to edit the skill and regenerate adapters.
+
+## Key facts
+
+- Opal scripts are full-trust `.js` files in `opal/scripts`; community scripts
+  are quarantined to `opal/scripts/pending` and require explicit "Trust & run".
+- Always build colors with `renderer.color(r, g, b[, a])`; never raw
+  `0xAARRGGBB` literals.
+- Only the API documented in `reference.md` exists — do not invent methods.

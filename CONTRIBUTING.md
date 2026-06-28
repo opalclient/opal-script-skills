@@ -1,0 +1,63 @@
+# Contributing
+
+Thanks for helping improve the Opal scripting skill.
+
+## Project shape
+
+- `skills/opal-scripting/` — **the source of truth.** Edit the skill here.
+- `bin/install.mjs` — the cross-AI installer (dependency-free ESM).
+- `adapters/` — static per-assistant surfaces, **generated from the skill**.
+- `test/install.test.mjs` — `node --test` coverage for the installer.
+
+## Editing the skill
+
+1. Change the relevant file under `skills/opal-scripting/`.
+2. Keep the API accurate: it must match the real Opal scripting API. The
+   authoritative examples are the client's shipped scripts (`ScriptScaffold.js`,
+   `Pacman.js`). Do not invent methods or globals.
+3. Keep `SKILL.md` tight and skimmable; put depth in `reference.md` /
+   `palette-views.md`.
+
+## Regenerating the adapters
+
+The `codex` / `gemini` / `copilot` adapter surfaces are produced by the
+installer, so they never drift from the skill:
+
+```bash
+node bin/install.mjs add --target codex   --dir adapters/codex
+node bin/install.mjs add --target gemini  --dir adapters/gemini
+node bin/install.mjs add --target copilot --dir adapters/copilot
+```
+
+The `claude-code` adapter is the Claude Code **plugin** form; copy the skill
+files into it when they change:
+
+```bash
+cp skills/opal-scripting/*.md adapters/claude-code/skills/opal-scripting/
+```
+
+## Tests
+
+```bash
+npm test     # node --test
+```
+
+Add a test for any new install target or installer behavior.
+
+## Commits
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>(<optional scope>): <imperative summary>
+```
+
+Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`.
+Keep one logical change per commit. Do not add AI-attribution trailers.
+
+## Ground rules
+
+- No runtime dependencies — keep the installer instant and safe under `npx`.
+- No machine paths (`C:\Users\...`, `/home/...`), tokens, or account IDs in any
+  committed file. Use placeholders.
+- Be kind; see the [Code of Conduct](CODE_OF_CONDUCT.md).

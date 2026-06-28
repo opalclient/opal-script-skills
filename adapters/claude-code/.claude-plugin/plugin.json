@@ -1,0 +1,15 @@
+{
+  "name": "opal-scripting",
+  "version": "0.1.0",
+  "description": "Skill for writing Opal (Minecraft client) JavaScript scripts: the registerScript/module/event model, the renderer canvas, palette command-palette views, dynamic islands, and the full-trust security model.",
+  "author": {
+    "name": "Opal"
+  },
+  "homepage": "https://github.com/opalclient/opal-script-skills",
+  "license": "MIT",
+  "keywords": [
+    "opal",
+    "minecraft",
+    "scripting"
+  ]
+}
