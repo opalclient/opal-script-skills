@@ -37,7 +37,20 @@ function findSkillDir(start) {
 }
 
 const SKILL_DIR = findSkillDir(dirname(SELF));
-const SKILL_FILES = ["SKILL.md", "reference.md", "palette-views.md"];
+const SKILL_FILES = [
+    "SKILL.md",
+    "reference.md",
+    "reference/core.md",
+    "reference/character.md",
+    "reference/world.md",
+    "reference/ui.md",
+    "palette-views.md",
+];
+// The condensed/combined renderers only pull in the deep-dive reference
+// files, not SKILL.md or palette-views.md (those are handled separately).
+const REFERENCE_FILES = SKILL_FILES.filter(
+    (name) => name !== "SKILL.md" && name !== "palette-views.md",
+);
 
 // ---------------------------------------------------------------------------
 // Target registry. `mode` decides how content is written:
@@ -92,10 +105,13 @@ function condensedBody() {
 
 // Full combined content for `file` targets (cursor / generic).
 function combinedBody() {
+    const referenceBody = REFERENCE_FILES.map((name) =>
+        stripFrontmatter(readSkill(name)).trimEnd(),
+    ).join("\n\n---\n\n");
+
     const parts = [
         stripFrontmatter(readSkill("SKILL.md")).trimEnd(),
-        "\n\n---\n\n# API reference\n\n" +
-            stripFrontmatter(readSkill("reference.md")).trimEnd(),
+        "\n\n---\n\n# API reference\n\n" + referenceBody,
         "\n\n---\n\n# Palette views\n\n" +
             stripFrontmatter(readSkill("palette-views.md")).trimEnd(),
     ];
@@ -140,6 +156,7 @@ function installTarget(target, baseDir) {
         ensureDir(destDir);
         for (const name of SKILL_FILES) {
             const out = join(destDir, name);
+            ensureDir(dirname(out));
             writeFileSync(out, readSkill(name));
             written.push(out);
         }
