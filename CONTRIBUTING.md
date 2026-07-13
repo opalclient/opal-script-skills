@@ -30,11 +30,16 @@ node bin/install.mjs add --target copilot --dir adapters/copilot
 ```
 
 The `claude-code` adapter is the Claude Code **plugin** form; copy the skill
-files into it when they change:
+files into it when they change (this preserves the `reference/` subfolder):
 
 ```bash
-cp skills/opal-scripting/*.md adapters/claude-code/skills/opal-scripting/
+cp -r skills/opal-scripting/. adapters/claude-code/skills/opal-scripting/
 ```
+
+The plugin also ships a `/new-opal-script` command
+(`adapters/claude-code/commands/new-opal-script.md`) that scaffolds a new
+script file. It references the skill files by relative path — keep it in sync
+if the reference layout changes again.
 
 ## Tests
 

@@ -16,11 +16,17 @@ It is a tiny, dependency-free Node (ESM) package. There is nothing to compile.
 ```
 skills/opal-scripting/        <- SOURCE OF TRUTH. Edit the skill here.
   SKILL.md                       the skill (frontmatter: name + trigger description)
-  reference.md                   full API surface
+  reference.md                   module/settings/event model index + keys
+  reference/core.md              client, notification, overlay, modules, mc
+  reference/character.md         player, movement, rotation, inventory, interaction
+  reference/world.md             world, esp, bound types (BlockPos, Vec2f, ...)
+  reference/ui.md                renderer, palette
   palette-views.md               worked palette-view example
 bin/install.mjs               <- the installer CLI (no deps, ESM)
 adapters/                     <- static per-AI surfaces, generated FROM the skill
+  claude-code/commands/          /new-opal-script scaffolding command (plugin only)
 test/install.test.mjs         <- node --test coverage for the installer
+test/skill-content.test.mjs   <- node --test tripwire: every proxy/global still mentioned
 ```
 
 The skill content is the product. The installer and adapters are delivery
