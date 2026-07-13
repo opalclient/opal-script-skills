@@ -6,9 +6,16 @@ is a single `.js` file in the client's `opal/scripts` folder. Scripts run
 **full-trust**: they have complete filesystem and client access. Treat every
 script as trusted native code (see [Security](#security--the-trust-model)).
 
-This skill is the source of truth. Two companion files go deeper:
+This skill is the source of truth. Companion files go deeper:
 
-- `reference.md` — the full API surface (globals, events, renderer, settings).
+- `reference.md` — the module/settings/event model index, plus the `keys` table.
+- `reference/core.md` — `client`, `notification`, `overlay`, `modules`, `mc`.
+- `reference/character.md` — `player`, `movement`, `rotation`, `inventory`, and
+  `mc.interactionManager`.
+- `reference/world.md` — `world`, `esp`, and the bound types (`BlockPos`,
+  `Vec2f`, `Vec3d`, `Vec3i`, `Direction`, `RaytracedRotation`, `MathHelper`,
+  `Color`, `MAIN_HAND`/`OFF_HAND`).
+- `reference/ui.md` — `renderer` and `palette`.
 - `palette-views.md` — a complete worked example of a custom palette view.
 
 Reference scripts ship inside the client at `opal/scripts` (`ScriptScaffold.js`,
@@ -80,9 +87,11 @@ module.addGroup("Movement", ["Tower", "Speed"]); // group existing settings
 Subscribe with `module.on("eventName", callback)`. Some events hand you an
 `event` object; cancellable ones expose `event.setCancelled()`.
 
-- **Lifecycle:** `enable`, `disable`.
+- **Lifecycle:** `enable`, `disable` (the only handlers that receive no argument).
 - **Ticks:** `preGameTick`, `postGameTick`.
-- **Render:** `renderScreen`, `renderBloom` (draw here, not in tick handlers).
+- **Render:** `renderScreen` (2D HUD pass), `renderWorld` (3D world pass — use
+  `esp.*` here for projection), `renderBloom` (feeds the bloom/glow effect,
+  doesn't draw directly). Draw here, not in tick handlers.
 - **World / net:** `joinWorld`, `serverConnect` *(cancellable)*, `serverDisconnect`,
   `blockUpdate`, `sendPacket`, `receivePacket`, `instantaneousSendPacket`,
   `instantaneousReceivePacket`, `preMovementPacket`, `postMovementPacket`.
@@ -93,17 +102,40 @@ Subscribe with `module.on("eventName", callback)`. Some events hand you an
 - **Misc:** `resolutionChange`.
 
 Guard `preGameTick` / `postGameTick` with `if (mc.player === null || mc.world === null) return;`
-because they fire while not in a world.
+because they fire while not in a world. `renderScreen`, `renderWorld`,
+`renderBloom`, and `swing` are Java **records** — read their fields with bare
+accessors (`event.tickDelta()`), not `getX()` getters. There is one handler
+slot per event name per module; calling `module.on` again for the same event
+replaces the previous handler. See `reference.md` for the full payload table.
 
 ## Globals
 
 Scripts get these proxy globals (no import needed): `client`, `player`, `world`,
 `inventory`, `movement`, `rotation`, `renderer`, `overlay`, `esp`, `modules`,
-`notification`, `mc`, `palette`, `keys`. See `reference.md` for members.
+`notification`, `mc`, `palette`, `keys`. See `reference/core.md`,
+`reference/character.md`, `reference/world.md`, and `reference/ui.md` for full
+member tables.
 
 `modules.isEnabled(name)` / `modules.setEnabled(name, bool)` lets a script
 cooperate with the client's built-in modules (e.g. disable native Scaffold while
-yours runs, then restore it on disable).
+yours runs, then restore it on disable). `modules` also has `exists`, `toggle`,
+`getCategory`, `getSuffix`, `isVisible`, `setVisible`, `listAll`,
+`listCategory`, `listEnabled` — see `reference/core.md`.
+
+Java classes and constants are also bound as globals, no import needed:
+`BlockPos`, `Vec2f`, `Direction`, `RaytracedRotation` (script-safe wrappers with
+readable method names — construct with `new BlockPos(x, y, z)` /
+`new Vec2f(yaw, pitch)`), plus the raw `Vec3d`, `Vec3i`, `MathHelper`, and
+`Color` types, and the `MAIN_HAND` / `OFF_HAND` hand constants. `Vec3d`, `Vec3i`,
+and `MathHelper` are intermediary-named at runtime — construct and pass them
+into proxy methods, but don't call instance methods on them by readable name.
+`Color` (`java.awt.Color`) is a normal JDK class and **is** directly callable
+(`new Color(r, g, b, a).getRGB()`). See `reference/world.md` for the full
+picture.
+
+`mc.interactionManager` wraps block/entity interaction: `interactBlock`,
+`updateBlockBreakingProgress`, `cancelBlockBreaking`, `isBreakingBlock`,
+`attackEntity`, `interactItem`, `stopUsingItem`. See `reference/character.md`.
 
 ## The renderer canvas
 
@@ -121,7 +153,7 @@ Images: `loadImage` / `destroyImage` / `image` / `imageTinted`. Vector paths:
 `rotate`, `scissor` (each is **scoped** — you pass a pivot/clip rect plus a
 content function it runs the draws inside; `rotate` takes **degrees**) and
 `globalAlpha(alpha)` (a 0.0–1.0 multiplier for the rest of the frame). See
-`reference.md` for exact signatures.
+`reference/ui.md` for exact signatures.
 
 Fonts: `"productsans-medium"`, `"productsans-bold"`, `"materialicons-regular"`.
 
@@ -178,8 +210,9 @@ palette.openView(view);   // or palette.openView("hello")
 ```
 
 `keys` exposes GLFW constants for handlers: `keys.UP/DOWN/LEFT/RIGHT`,
-`keys.W..Z`, `keys.SPACE/ENTER/ESCAPE/TAB`, `keys.NUM_0..NUM_9`. See
-`palette-views.md` for a complete example.
+`keys.W..Z`, `keys.SPACE/ENTER/ESCAPE/TAB/BACKSPACE/LEFT_SHIFT/LEFT_CONTROL`,
+`keys.NUM_0..NUM_9`. See `reference/ui.md` and `palette-views.md` for a
+complete example.
 
 ## Dynamic islands
 
@@ -237,8 +270,9 @@ sandbox. This is intentional so power users can automate anything.
 - **Using `dt` from the wrong place.** `dt` is provided to palette `render`; in a
   `renderScreen` overlay you compute it yourself (e.g. from `Date.now()`), and
   clamp it so a backgrounded frame doesn't make a giant jump.
-- **Inventing API.** Only the members in `reference.md` exist. Do not guess
-  method names — check the reference or a shipped example.
+- **Inventing API.** Only the members documented in `reference.md` and
+  `reference/*.md` exist. Do not guess method names — check the reference or a
+  shipped example.
 - **Not consuming palette input.** `keyPressed` should `return true` when it
   handled the key, `false` to let the palette handle it (Esc always closes).
 <!-- opal-scripting:end -->
