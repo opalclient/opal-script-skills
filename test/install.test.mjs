@@ -59,6 +59,10 @@ test("--all writes the expected file for every target", () => {
     const expected = [
         ".claude/skills/opal-scripting/SKILL.md",
         ".claude/skills/opal-scripting/reference.md",
+        ".claude/skills/opal-scripting/reference/core.md",
+        ".claude/skills/opal-scripting/reference/character.md",
+        ".claude/skills/opal-scripting/reference/world.md",
+        ".claude/skills/opal-scripting/reference/ui.md",
         ".claude/skills/opal-scripting/palette-views.md",
         ".cursor/rules/opal-scripting.md",
         "OPAL_SCRIPTING.md",

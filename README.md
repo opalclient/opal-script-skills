@@ -14,7 +14,17 @@ The single **source of truth** is [`skills/opal-scripting/`](skills/opal-scripti
 
 - [`SKILL.md`](skills/opal-scripting/SKILL.md) — the skill (structure, settings,
   events, renderer + color rule, palette views, islands, security, common mistakes).
-- [`reference.md`](skills/opal-scripting/reference.md) — the full API surface.
+- [`reference.md`](skills/opal-scripting/reference.md) — the module/settings/event
+  model index, plus the `keys` table. Proxy globals are split by category:
+  - [`reference/core.md`](skills/opal-scripting/reference/core.md) — `client`,
+    `notification`, `overlay`, `modules`, `mc`.
+  - [`reference/character.md`](skills/opal-scripting/reference/character.md) —
+    `player`, `movement`, `rotation`, `inventory`, `mc.interactionManager`.
+  - [`reference/world.md`](skills/opal-scripting/reference/world.md) — `world`,
+    `esp`, and the bound types (`BlockPos`, `Vec2f`, `Vec3d`, `Vec3i`,
+    `Direction`, `RaytracedRotation`, `MathHelper`, `Color`, hand constants).
+  - [`reference/ui.md`](skills/opal-scripting/reference/ui.md) — `renderer`,
+    `palette`.
 - [`palette-views.md`](skills/opal-scripting/palette-views.md) — a complete
   palette-view example.
 
@@ -73,7 +83,8 @@ Don't want to run the installer? Copy a ready-made surface from
 [`adapters/`](adapters/):
 
 - [`adapters/claude-code/`](adapters/claude-code/) — Claude Code **plugin** form
-  (`.claude-plugin/plugin.json` + `skills/opal-scripting/`).
+  (`.claude-plugin/plugin.json` + `skills/opal-scripting/` + a
+  `/new-opal-script` command that scaffolds a new script file).
 - [`adapters/codex/AGENTS.md`](adapters/codex/AGENTS.md)
 - [`adapters/gemini/GEMINI.md`](adapters/gemini/GEMINI.md)
 - [`adapters/copilot/.github/copilot-instructions.md`](adapters/copilot/.github/copilot-instructions.md)

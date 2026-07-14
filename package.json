@@ -1,6 +1,6 @@
 {
   "name": "@opalclient/opal-script-skills",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Portable AI assistant skills for writing Opal (Minecraft client) JavaScript scripts, with a cross-AI installer.",
   "type": "module",
   "bin": {

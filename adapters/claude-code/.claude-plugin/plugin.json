@@ -1,7 +1,7 @@
 {
   "name": "opal-scripting",
-  "version": "0.1.0",
-  "description": "Skill for writing Opal (Minecraft client) JavaScript scripts: the registerScript/module/event model, the renderer canvas, palette command-palette views, dynamic islands, and the full-trust security model.",
+  "version": "0.2.0",
+  "description": "Skill and tooling for writing Opal (Minecraft client) JavaScript scripts: the registerScript/module/event model, the full proxy API (client, player, movement, rotation, inventory, world, esp, renderer, palette, and more), dynamic islands, the full-trust security model, and a /new-opal-script scaffolding command.",
   "author": {
     "name": "Opal"
   },
@@ -11,5 +11,6 @@
     "opal",
     "minecraft",
     "scripting"
-  ]
+  ],
+  "commands": "./commands"
 }
