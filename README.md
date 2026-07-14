@@ -1,37 +1,38 @@
 # opal-script-skills
 
 Portable AI-assistant **skills** for writing [Opal](https://opal.wtf) (Minecraft
-utility client) JavaScript scripts — plus a cross-AI installer that drops the
+utility client) JavaScript scripts, plus a cross-AI installer that drops the
 skill into whatever assistant your project uses.
 
 Opal ships a GraalVM-JS scripting system: scripts are `.js` files in the
 client's `opal/scripts` folder. This repo teaches an AI assistant the real
-scripting API — `registerScript` / modules / settings / events, the `renderer`
-canvas, the `palette` command-palette views, dynamic islands, and the full-trust
-security model — so it stops inventing methods and writes scripts that run.
+scripting API (`registerScript` / modules / settings / events, the `renderer`
+canvas, the `palette` command-palette views, dynamic islands, and the
+sandboxed security model) so it stops inventing methods and writes scripts
+that run.
 
 The single **source of truth** is [`skills/opal-scripting/`](skills/opal-scripting/):
 
-- [`SKILL.md`](skills/opal-scripting/SKILL.md) — the skill (structure, settings,
+- [`SKILL.md`](skills/opal-scripting/SKILL.md): the skill (structure, settings,
   events, renderer + color rule, palette views, islands, security, common mistakes).
-- [`reference.md`](skills/opal-scripting/reference.md) — the module/settings/event
+- [`reference.md`](skills/opal-scripting/reference.md): the module/settings/event
   model index, plus the `keys` table. Proxy globals are split by category:
-  - [`reference/core.md`](skills/opal-scripting/reference/core.md) — `client`,
+  - [`reference/core.md`](skills/opal-scripting/reference/core.md): `client`,
     `notification`, `overlay`, `modules`, `mc`.
-  - [`reference/character.md`](skills/opal-scripting/reference/character.md) —
+  - [`reference/character.md`](skills/opal-scripting/reference/character.md):
     `player`, `movement`, `rotation`, `inventory`, `mc.interactionManager`.
-  - [`reference/world.md`](skills/opal-scripting/reference/world.md) — `world`,
+  - [`reference/world.md`](skills/opal-scripting/reference/world.md): `world`,
     `esp`, and the bound types (`BlockPos`, `Vec2f`, `Vec3d`, `Vec3i`,
     `Direction`, `RaytracedRotation`, `MathHelper`, `Color`, hand constants).
-  - [`reference/ui.md`](skills/opal-scripting/reference/ui.md) — `renderer`,
+  - [`reference/ui.md`](skills/opal-scripting/reference/ui.md): `renderer`,
     `palette`.
-- [`palette-views.md`](skills/opal-scripting/palette-views.md) — a complete
+- [`palette-views.md`](skills/opal-scripting/palette-views.md): a complete
   palette-view example.
 
 ## Install
 
 One command per assistant. Run it from your project root. No dependencies, no
-network — it just renders the skill into the right place.
+network; it just renders the skill into the right place.
 
 ```bash
 # Auto-detect which assistants this project uses and install for them:
@@ -53,7 +54,7 @@ npx @opalclient/opal-script-skills add --all
 npx @opalclient/opal-script-skills list
 ```
 
-After publishing, the `npx` short name `opal-skills` works too. Use `--dir <path>`
+The `npx` short name `opal-skills` works too. Use `--dir <path>`
 to install into a directory other than the current one.
 
 ### What each target writes
@@ -74,7 +75,7 @@ block is replaced, never duplicated.
 
 When you pass neither `--target` nor `--all`, the installer detects markers in
 the directory (`.claude/`, `AGENTS.md`, `GEMINI.md`, `.github/`, `.cursor/`,
-`.windsurfrules`) and installs the matching targets; if it finds none it installs
+`.windsurfrules`) and installs the matching targets. If it finds none, it installs
 `generic`.
 
 ## Manual adapters
@@ -82,7 +83,7 @@ the directory (`.claude/`, `AGENTS.md`, `GEMINI.md`, `.github/`, `.cursor/`,
 Don't want to run the installer? Copy a ready-made surface from
 [`adapters/`](adapters/):
 
-- [`adapters/claude-code/`](adapters/claude-code/) — Claude Code **plugin** form
+- [`adapters/claude-code/`](adapters/claude-code/): Claude Code **plugin** form
   (`.claude-plugin/plugin.json` + `skills/opal-scripting/` + a
   `/new-opal-script` command that scaffolds a new script file).
 - [`adapters/codex/AGENTS.md`](adapters/codex/AGENTS.md)
@@ -92,7 +93,7 @@ Don't want to run the installer? Copy a ready-made surface from
 ## In-client docs
 
 The authoritative reference is the client itself. Reference scripts ship in the
-Opal install under `opal/scripts` (`ScriptScaffold.js`, `Pacman.js`) — read them
+Opal install under `opal/scripts` (`ScriptScaffold.js`, `Pacman.js`); read them
 for idiomatic usage. Community scripts are quarantined to `opal/scripts/pending`
 and require an explicit **"Trust & run"**; see [`SECURITY.md`](SECURITY.md).
 
@@ -100,9 +101,9 @@ and require an explicit **"Trust & run"**; see [`SECURITY.md`](SECURITY.md).
 
 If you are an AI assistant working in this repo:
 
-- [`CLAUDE.md`](CLAUDE.md) — the mental model for this repo and how to change it.
-- [`llms.txt`](llms.txt) — a compact, link-first map of everything here.
-- [`skills/opal-scripting/`](skills/opal-scripting/) — the source of truth for
+- [`CLAUDE.md`](CLAUDE.md): the mental model for this repo and how to change it.
+- [`llms.txt`](llms.txt): a compact, link-first map of everything here.
+- [`skills/opal-scripting/`](skills/opal-scripting/): the source of truth for
   the Opal scripting API. **Use only the API documented there**; do not invent
   methods.
 
