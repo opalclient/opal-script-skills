@@ -44,8 +44,18 @@ mechanisms — they must never drift from `skills/opal-scripting/`.
 ## Hard rules
 
 - **Accuracy of the API.** The skill must describe only the real Opal scripting
-  API. The authoritative examples are the client's shipped scripts
-  (`ScriptScaffold.js`, `Pacman.js`). Do not invent methods or globals.
+  API. The client's Java is the source of truth: a member is script-callable
+  **only** if it carries `@HostAccess.Export` (the sandbox is
+  `HostAccess.EXPLICIT`, default-deny). No annotation → it does not exist for
+  scripts, whatever any doc, typing, or example claims. The shipped scripts
+  (`ScriptScaffold.js`, `Pacman.js`) are the idiom reference. Do not invent
+  methods or globals, and verify before documenting — docs promising members
+  the sandbox denies is exactly how this skill has shipped bugs before.
+- **The two silent traps.** `mc.player`/`mc.world` do not exist (getters only:
+  `mc.getPlayer()`/`mc.getWorld()`), and every collection is a `ScriptList`
+  (`size()`/`isEmpty()`/`get(i)`), never an array. Both fail *silently* as
+  `undefined`, so every example must model the correct form — agents copy
+  examples verbatim.
 - **The color rule.** Colors are always built with `renderer.color(...)`, never
   raw `0xAARRGGBB` literals. This is load-bearing — keep it prominent.
 - **No machine paths or secrets.** Never commit a `C:\Users\...` path, a home

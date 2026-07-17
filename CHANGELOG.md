@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The sandbox model, which was documented backwards.** `SKILL.md`, `README.md`,
+  `llms.txt` and `SECURITY.md` described scripts as running "full-trust … with no
+  sandbox". That was never true: script contexts have always been built with
+  `HostAccess.EXPLICIT` (default-deny), `allowHostClassLookup(name -> false)` (no
+  `Java.type`), and `IOAccess.NONE` (no filesystem). All four now describe the
+  real model, with Java-imports-off framed as the deliberate design that makes a
+  public script gallery safe to offer.
+- **`mc.player` / `mc.world`, and the guard idiom built on them.** Neither
+  exists — the sandbox does no getter-to-property bean mapping, so both read as
+  `undefined` and `if (mc.player === null) return;` never fired. Every
+  occurrence, prose and example, is now `mc.getPlayer()` / `mc.getWorld()`.
+  (`mc.interactionManager` is unaffected: it is an exported *field*, so the
+  property form is correct there.)
+- **Collections documented as arrays.** Every collection-returning method
+  returns a `ScriptList` (`size()` / `isEmpty()` / `get(i)`), which has no
+  `.length`, no `[i]`, and no `for..of`. The old "listing methods return
+  JS-iterable string arrays" claim and its `for (let i = 0; i < combat.length; i++)`
+  example produced silently no-op loops.
+- **Geometry and value types.** `box.x` / `p.z` property access reads
+  `undefined`; the real types are `ScriptVec3`, `ScriptVec2f` (`getYaw()` /
+  `getPitch()`), `ScriptBox2D`, `ScriptBox3D`, `ScriptItemStack`, `ScriptImage`,
+  `ScriptEntity`, all read through getters. The "intermediary-named at runtime"
+  explanation was wrong twice over: the client is on Mojang mappings, and the
+  cause was the host-access policy.
+- **`entity.getName().getString()`** — `getName()` returns a plain `String`.
+- **Event payloads**, which disagreed with the client throughout: cancellation
+  is `cancel()` (not `setCancelled()`); `chatReceived` exposes `getMessage()`
+  (not `getText()`); `blockUpdate` exposes `getX/getY/getZ/getOldBlock/getNewBlock`
+  (not `getPos/getOldState/getNewState`); `serverConnect` exposes
+  `getHost/getPort/getAddress`; `preMove`/`postMove` expose `getInputX/Y/Z`;
+  packet events expose `getType()` (not `getPacket()`); `keyPress`/`mousePress`
+  expose `getCode()` (not `getInteractionCode()`); `swing` exposes
+  `isMainHand()`. `renderScreen`/`renderWorld`/`renderBloom` carry **no readable
+  members** — the "read their fields with bare record accessors" advice threw on
+  every call; handlers take no argument and use `client.getTickDelta()`.
+- **Removed APIs** deleted from the docs: `client.getModule()`,
+  `world.getBlockState()`, `world.getBlock()`, the `Vec3i` global, and
+  `movement.getMoveYaw(Vector2d, Vector2d)` (use the four-number
+  `getMoveYaw(fromX, fromZ, toX, toZ)` — world X and Z).
+- **`MathHelper`** is documented as a dead global: it is raw `Mth` with nothing
+  allow-listed, so every call on it is denied. Use JS's native `Math`. (`Color`
+  really does work — its constructors and `getRGB()` are allow-listed.)
+- `adapters/claude-code/commands/new-opal-script.md` no longer seeds the broken
+  `if (mc.player === null || mc.world === null) return; // always guard` line
+  into every scaffolded script.
+
+### Added
+
+- Documentation for the newer API surface: status effects (`player.hasEffect` /
+  `getEffect` / `getEffects` and `ScriptEffect`, including the 0-based
+  `getAmplifier()` vs 1-based `getLevel()` convention and the `-1`
+  infinite-duration sentinel), script keybinds (`module.setBind` / `getBind` /
+  `clearBind` plus the `keys.F1`–`F12` / `MOUSE_0`–`MOUSE_4` / `NONE`
+  constants), `ScriptEntity` entity reads, `AttackEvent.getTarget()`, the
+  `timer` global, `client.sendChat` / `runCommand`, and the `-1` not-applicable
+  sentinel convention.
+
 ## [0.2.0] - 2026-07-13
 
 ### Added
@@ -22,6 +81,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `MathHelper` (intermediary-named, construct/pass-through only), `Color`
   (directly callable), and the `MAIN_HAND`/`OFF_HAND` constants, in the new
   `reference/world.md`.
+  <br>**Superseded — several claims here were wrong.** `Vec3i` does not exist,
+  `MathHelper` is a dead global, `Direction`/`RaytracedRotation` are returned
+  wrapper types rather than globals, and the "intermediary-named" explanation
+  was incorrect. See the `Unreleased` entry above for the corrections.
 - Full `modules` (`ModuleProxy`) documentation — all 11 methods (`exists`,
   `isEnabled`, `setEnabled`, `toggle`, `getCategory`, `getSuffix`,
   `isVisible`, `setVisible`, `listAll`, `listCategory`, `listEnabled`), up

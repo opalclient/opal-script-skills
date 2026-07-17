@@ -12,17 +12,18 @@ source of truth; everything else delivers it.
 
 - [SKILL.md](skills/opal-scripting/SKILL.md): the skill — script structure, the
   module/settings/event model, the renderer canvas and the color rule, palette
-  command-palette views, dynamic islands, the full-trust security model, and a
+  command-palette views, dynamic islands, the default-deny sandbox model, and a
   common-mistakes list.
 - [reference.md](skills/opal-scripting/reference.md): the module/settings/event
   model index, plus the `keys` table.
 - [reference/core.md](skills/opal-scripting/reference/core.md): `client`,
-  `notification`, `overlay`, `modules`, `mc`.
+  `notification`, `overlay`, `modules`, `mc`, `timer`, `ScriptList`.
 - [reference/character.md](skills/opal-scripting/reference/character.md):
   `player`, `movement`, `rotation`, `inventory`, `mc.interactionManager`.
 - [reference/world.md](skills/opal-scripting/reference/world.md): `world`,
-  `esp`, and the bound types (`BlockPos`, `Vec2f`, `Vec3d`, `Vec3i`,
-  `Direction`, `RaytracedRotation`, `MathHelper`, `Color`, hand constants).
+  `esp`, the class globals (`BlockPos`, `Vec2f`, `Vec3d`, `Color`, hand
+  constants), and the wrapper types the proxies return (`ScriptVec3`,
+  `ScriptEntity`, `ScriptEffect`, `ScriptBox2D`, …).
 - [reference/ui.md](skills/opal-scripting/reference/ui.md): `renderer`,
   `palette`.
 - [palette-views.md](skills/opal-scripting/palette-views.md): a complete worked
@@ -50,14 +51,18 @@ source of truth; everything else delivers it.
 
 - [README.md](README.md): what this is and how to install per assistant.
 - [CLAUDE.md](CLAUDE.md): mental model and rules for changing this repo.
-- [SECURITY.md](SECURITY.md): the full-trust script model and reporting.
+- [SECURITY.md](SECURITY.md): the script sandbox model and reporting.
 - [CONTRIBUTING.md](CONTRIBUTING.md): how to edit the skill and regenerate adapters.
 
 ## Key facts
 
-- Opal scripts are full-trust `.js` files in `opal/scripts`; community scripts
-  are quarantined to `opal/scripts/pending` and require explicit "Trust & run".
+- Opal scripts are sandboxed `.js` files in `opal/scripts`: default-deny host
+  access (`HostAccess.EXPLICIT`), no `Java.type`, no filesystem. Community
+  scripts are also quarantined to `opal/scripts/pending` behind "Trust & run".
 - Always build colors with `renderer.color(r, g, b[, a])`; never raw
   `0xAARRGGBB` literals.
 - Only the API documented in `reference.md` and `reference/*.md` exists — do
-  not invent methods.
+  not invent methods. A member without `@HostAccess.Export` does not exist.
+- Two silent traps: `mc.player`/`mc.world` do not exist (call `mc.getPlayer()`/
+  `mc.getWorld()`), and collections are `ScriptList` (`size()`/`get(i)`), never
+  arrays. Both read `undefined` rather than throwing.

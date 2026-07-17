@@ -8,22 +8,24 @@ Opal ships a GraalVM-JS scripting system: scripts are `.js` files in the
 client's `opal/scripts` folder. This repo teaches an AI assistant the real
 scripting API (`registerScript` / modules / settings / events, the `renderer`
 canvas, the `palette` command-palette views, dynamic islands, and the
-sandboxed security model) so it stops inventing methods and writes scripts
+default-deny sandbox model) so it stops inventing methods and writes scripts
 that run.
 
 The single **source of truth** is [`skills/opal-scripting/`](skills/opal-scripting/):
 
 - [`SKILL.md`](skills/opal-scripting/SKILL.md): the skill (structure, settings,
-  events, renderer + color rule, palette views, islands, security, common mistakes).
+  events, renderer + color rule, palette views, islands, the sandbox, common
+  mistakes).
 - [`reference.md`](skills/opal-scripting/reference.md): the module/settings/event
   model index, plus the `keys` table. Proxy globals are split by category:
   - [`reference/core.md`](skills/opal-scripting/reference/core.md): `client`,
-    `notification`, `overlay`, `modules`, `mc`.
+    `notification`, `overlay`, `modules`, `mc`, `timer`, `ScriptList`.
   - [`reference/character.md`](skills/opal-scripting/reference/character.md):
     `player`, `movement`, `rotation`, `inventory`, `mc.interactionManager`.
   - [`reference/world.md`](skills/opal-scripting/reference/world.md): `world`,
-    `esp`, and the bound types (`BlockPos`, `Vec2f`, `Vec3d`, `Vec3i`,
-    `Direction`, `RaytracedRotation`, `MathHelper`, `Color`, hand constants).
+    `esp`, the class globals (`BlockPos`, `Vec2f`, `Vec3d`, `Color`, hand
+    constants), and the wrapper types the proxies return (`ScriptVec3`,
+    `ScriptEntity`, `ScriptEffect`, `ScriptBox2D`, …).
   - [`reference/ui.md`](skills/opal-scripting/reference/ui.md): `renderer`,
     `palette`.
 - [`palette-views.md`](skills/opal-scripting/palette-views.md): a complete
@@ -94,8 +96,9 @@ Don't want to run the installer? Copy a ready-made surface from
 
 The authoritative reference is the client itself. Reference scripts ship in the
 Opal install under `opal/scripts` (`ScriptScaffold.js`, `Pacman.js`); read them
-for idiomatic usage. Community scripts are quarantined to `opal/scripts/pending`
-and require an explicit **"Trust & run"**; see [`SECURITY.md`](SECURITY.md).
+for idiomatic usage. Scripts run in a default-deny sandbox, and community
+scripts are additionally quarantined to `opal/scripts/pending` behind an
+explicit **"Trust & run"**; see [`SECURITY.md`](SECURITY.md).
 
 ## For AI agents
 

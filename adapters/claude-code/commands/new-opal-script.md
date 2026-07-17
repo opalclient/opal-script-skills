@@ -18,6 +18,15 @@ the `opal-scripting` skill at `../skills/opal-scripting/` (`SKILL.md`,
 methods and globals documented there.** Do not invent API surface, even to
 make the template look richer.
 
+Two sandbox rules the scaffolded script must respect — both fail **silently**,
+so a script that gets them wrong looks fine and does nothing:
+
+- **`mc.player` / `mc.world` do not exist.** They read as `undefined`, which
+  makes `if (mc.player === null) return;` a guard that never fires. Always
+  `if (mc.getPlayer() === null || mc.getWorld() === null) return;`.
+- **Collections are `ScriptList`, not arrays** — `size()` / `isEmpty()` /
+  `get(i)`, never `.length` / `[i]` / `for..of`.
+
 ## Argument parsing (`$ARGUMENTS`)
 
 - **ScriptName** (first token): a display name for the script, e.g.
@@ -47,8 +56,8 @@ Derive:
    `MyScript`/`MyModule` and `ModuleDescription` for the description string.
    Keep every line — this template is deliberately a complete, runnable
    starting point that already follows the house rules (settings declared
-   before `module.on`, the `renderer.color(...)` rule, the null-guard on tick
-   and render handlers, cleanup on `disable`).
+   before `module.on`, the `renderer.color(...)` rule, the `mc.getPlayer()`
+   null-guard on tick handlers, cleanup on `disable`).
 
    ```javascript
    const script = registerScript({
@@ -84,7 +93,9 @@ Derive:
 
        // --- Per-tick logic ---
        module.on("preGameTick", () => {
-           if (mc.player === null || mc.world === null) return; // always guard
+           // Always guard — and always via the getters. There is no mc.player:
+           // the property reads undefined, so a === null check never fires.
+           if (mc.getPlayer() === null || mc.getWorld() === null) return;
 
            ticks++;
            if (module.getBool("Enabled Extra") && ticks % module.getNumber("Interval") === 0) {
@@ -96,6 +107,8 @@ Derive:
        });
 
        // --- HUD drawing (only draws inside a render context) ---
+       // No parameter: renderScreen carries no readable payload — its accessors
+       // throw. Use client.getTickDelta() if you need the partial tick.
        module.on("renderScreen", () => {
            if (!module.getBool("Enabled Extra")) return;
 

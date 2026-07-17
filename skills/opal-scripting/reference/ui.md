@@ -54,20 +54,30 @@ Text (font is one of `"productsans-medium"`, `"productsans-bold"`,
 - `textGradient(fontName, text, x, y, size, color1, color2)`
 - `textWidth(fontName, text, size)` → number
 - `textHeight(fontName, text, size)` → number — note `text` is required.
-- `wrapText(fontName, text, width, size)` → `String[]` — note order is
-  `text, width, size`; the result has `.length` and index access.
+- `wrapText(fontName, text, width, size)` → `ScriptList<String>` — the lines
+  after wrapping to `width`. Note the order is `text, width, size`. It is a
+  **`ScriptList`, not an array**: `size()` / `get(i)` only — `.length` and
+  `[i]` read as `undefined`, silently.
 - `trimText(fontName, text, width, size)` → `String` (adds an ellipsis if
   truncated) — note order is `text, width, size`.
+
+```js
+const lines = renderer.wrapText("productsans-medium", msg, 180, 8);
+for (let i = 0; i < lines.size(); i++) {
+    renderer.text("productsans-medium", lines.get(i), x, y + i * 10, 8, fg);
+}
+```
 
 Images (all `radius` args are **required**, not optional). Images load once
 into a GPU handle; the renderer caches by path, so repeated `loadImage` calls
 with the same path are cheap.
 
-- `loadImage(path)` → handle (returns `GpuImageHandle.NONE` on failure rather
-  than throwing — check `handle.isValid()` before drawing).
-- `destroyImage(handle)`
-- `image(handle, x, y, w, h, radius)`
-- `imageTinted(handle, x, y, w, h, radius, tint)` — `radius` comes before
+- `loadImage(path)` → `ScriptImage` — never throws on a missing/broken file; it
+  returns an image whose `isValid()` is `false`. **Check `img.isValid()` before
+  drawing.** Also exposes `getWidth()` / `getHeight()`.
+- `destroyImage(image)`
+- `image(image, x, y, w, h, radius)`
+- `imageTinted(image, x, y, w, h, radius, tint)` — `radius` comes before
   `tint`.
 
 Vector paths:
@@ -196,6 +206,13 @@ reference `org.lwjgl.*` directly):
 | Action | `keys.SPACE`, `keys.ENTER`, `keys.ESCAPE`, `keys.TAB`, `keys.BACKSPACE`, `keys.LEFT_SHIFT`, `keys.LEFT_CONTROL` |
 | Letters | `keys.A` … `keys.Z` |
 | Digit row | `keys.NUM_0` … `keys.NUM_9` |
+| Function | `keys.F1` … `keys.F12` |
+| Mouse | `keys.MOUSE_0` … `keys.MOUSE_4` (`0`–`4`) |
+| Unbound | `keys.NONE` (`-2`) |
+
+The last two groups matter mainly for `module.setBind(code)`, where any code
+below `10` is treated as a mouse button and `keys.NONE` unbinds — see
+[`../reference.md`](../reference.md#module-handle).
 
 ```js
 const view = palette.createView({

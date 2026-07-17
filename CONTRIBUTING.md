@@ -12,9 +12,15 @@ Thanks for helping improve the Opal scripting skill.
 ## Editing the skill
 
 1. Change the relevant file under `skills/opal-scripting/`.
-2. Keep the API accurate: it must match the real Opal scripting API. The
-   authoritative examples are the client's shipped scripts (`ScriptScaffold.js`,
-   `Pacman.js`). Do not invent methods or globals.
+2. Keep the API accurate: it must match the real Opal scripting API. **The
+   client's Java is the only source of truth** — a member is script-callable
+   only if it carries `@HostAccess.Export`, because the sandbox is
+   `HostAccess.EXPLICIT` (default-deny). No annotation → it does not exist for
+   scripts. Verify against the proxy class before documenting a member; do not
+   trust an existing doc, typing, or example. The shipped scripts
+   (`ScriptScaffold.js`, `Pacman.js`) are useful for idiom but some lag the
+   current API — do not treat them as authoritative. Do not invent methods or
+   globals.
 3. Keep `SKILL.md` tight and skimmable; put depth in `reference.md` /
    `palette-views.md`.
 
