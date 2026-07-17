@@ -18,14 +18,15 @@ the `opal-scripting` skill at `../skills/opal-scripting/` (`SKILL.md`,
 methods and globals documented there.** Do not invent API surface, even to
 make the template look richer.
 
-Two sandbox rules the scaffolded script must respect — both fail **silently**,
-so a script that gets them wrong looks fine and does nothing:
+Two facts the scaffolded script must respect:
 
-- **`mc.player` / `mc.world` do not exist.** They read as `undefined`, which
-  makes `if (mc.player === null) return;` a guard that never fires. Always
+- **`mc.player` / `mc.world` do not exist**, and getting this wrong fails
+  **silently**. They read as `undefined`, which makes `if (mc.player === null)
+  return;` a guard that never fires. Always
   `if (mc.getPlayer() === null || mc.getWorld() === null) return;`.
-- **Collections are `ScriptList`, not arrays** — `size()` / `isEmpty()` /
-  `get(i)`, never `.length` / `[i]` / `for..of`.
+- **Collections are `ScriptList`** — a read-only, array-like view: `.length`,
+  `[i]`, `for..of`, and spread all work, but it is not a full `Array` (no
+  `.map` / `.filter`). Walk it with `for..of`.
 
 ## Argument parsing (`$ARGUMENTS`)
 
@@ -107,8 +108,8 @@ Derive:
        });
 
        // --- HUD drawing (only draws inside a render context) ---
-       // No parameter: renderScreen carries no readable payload — its accessors
-       // throw. Use client.getTickDelta() if you need the partial tick.
+       // renderScreen hands you an event: getPartialTicks()/getMouseX()/getMouseY().
+       // getPartialTicks() equals client.getTickDelta(); ignore the arg if unused.
        module.on("renderScreen", () => {
            if (!module.getBool("Enabled Extra")) return;
 

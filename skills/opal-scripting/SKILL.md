@@ -10,18 +10,16 @@ is a single `.js` file in the client's `opal/scripts` folder. Scripts run
 **sandboxed**: a default-deny host-access policy, no `Java.type`, no filesystem
 (see [Security](#security--the-sandbox-model)).
 
-That sandbox is the single most important thing to understand before writing a
-line of script, because **two of its failure modes are silent**:
+The one sandbox rule that bites silently: **`mc.player` and `mc.world` do not
+exist.** There is no bean-property mapping, so they read as `undefined`, and
+`if (mc.player === null) return;` is a guard that never fires. Call the getters:
+`if (mc.getPlayer() === null || mc.getWorld() === null) return;`. Nothing throws;
+the handler runs on with no player and does nothing.
 
-- **`mc.player` and `mc.world` do not exist.** There is no bean-property
-  mapping — they read as `undefined`, so the old
-  `if (mc.player === null) return;` guard never fires. Call the getters:
-  `if (mc.getPlayer() === null || mc.getWorld() === null) return;`
-- **Collections are `ScriptList`, not arrays.** `.length`, `[i]`, `for..of` and
-  `Array.from` all silently yield `undefined`/nothing. Use
-  `size()` + `get(i)`.
-
-Neither throws. A script that gets these wrong runs happily and does nothing.
+Collections behave the way you expect. A listing method returns a `ScriptList`,
+which reads as a read-only JS array: `.length`, `list[i]`, `for..of`, and spread
+all work. It is not a full `Array` (`.map`/`.filter` are absent), and you can't
+write to it. Walk it with `for..of`.
 
 This skill is the source of truth. Companion files go deeper:
 
@@ -81,6 +79,27 @@ script.registerModule({
 A script does not have to register a module at all — it can register only a
 palette view or an overlay island (see below). But the module is the normal
 unit of user-toggleable behavior.
+
+## Manifest header
+
+A script may open with an optional `// ==OpalScript==` comment block. Add it: it
+documents the script and is what future update-checks and the gallery will read.
+
+```js
+// ==OpalScript==
+// @name       My Script
+// @version    1.2.0
+// @author     trq
+// @minClient  26.2
+// @capability render, chat
+// ==/OpalScript==
+```
+
+The client parses and logs it, nothing more this release — it does not gate
+loading, enforce `@minClient`, or expose the fields to the script. Treat it as
+metadata for humans and tools, not a runtime check you can rely on. It must be
+the first non-blank content in the file; a malformed line is skipped rather than
+failing the load.
 
 ## Settings model
 
@@ -144,13 +163,13 @@ Guard `preGameTick` / `postGameTick` with
 `if (mc.getPlayer() === null || mc.getWorld() === null) return;` because they
 fire while not in a world.
 
-**Render events carry nothing readable.** `renderScreen`, `renderWorld`, and
-`renderBloom` hand the handler a raw record with no exported members, so
-`drawContext()`, `canvas()`, `mouseX()`, `mouseY()`, `matrixStack()` and
-`tickDelta()` all throw. Declare those handlers with **no parameter** and use
-the globals instead — `client.getTickDelta()` for the partial tick, `renderer`
-for drawing. The same applies to `preGameTick`, `postGameTick`, `joinWorld`,
-`itemUse`, `serverDisconnect`, and `resolutionChange`: they carry no data.
+**Render events hand you a payload.** `renderScreen` gets an `event` with
+`getPartialTicks()`, `getMouseX()`, and `getMouseY()` (the GUI-scaled cursor);
+`renderWorld` and `renderBloom` get `getPartialTicks()` only. `client.getTickDelta()`
+returns the same partial tick, so a handler that ignores the argument still
+works. Draw with the `renderer` global. `preGameTick`, `postGameTick`,
+`joinWorld`, `itemUse`, `serverDisconnect`, and `resolutionChange` carry no
+readable data — declare those with no parameter.
 
 There is one handler slot per event name per module; calling `module.on` again
 for the same event replaces the previous handler. See `reference.md` for the
@@ -328,6 +347,21 @@ Always `destroyIsland` (and `destroyImage` any loaded images) in the module's
 `notification.success/error/warn/info(title, desc[, ms])` and
 `notification.show(type, title, desc[, ms])`.
 
+## Debugging
+
+Print-debugging works. `client.print(x)` calls `toString()`, and every wrapper
+now prints a readable form instead of `JavaObject[...]` — a `ScriptVec3` shows
+`ScriptVec3(12.5, 64.0, -3.2)`, an entity `ScriptEntity(Zombie #123 hp=20.0/20.0)`,
+an effect `ScriptEffect(minecraft:speed x2, 12s)`. `String(x)` and `console.log(x)`
+render the same forms.
+
+Errors are located and loud. When a handler throws, the client reports
+`MyScript.js:42: <message>` — the file and line the throw came from. A load-time
+error (before you join a world) is buffered and surfaces on join.
+`registerScript` called without a required field names the field. Per event, the
+client prints the first error then suppresses repeats until the module is
+re-enabled (see the note under the event table in `reference.md`).
+
 ## Security — the sandbox model
 
 Scripts run **sandboxed by design**. The GraalJS context is built with:
@@ -340,6 +374,15 @@ Scripts run **sandboxed by design**. The GraalJS context is built with:
   cannot reach a class it wasn't handed as a global.
 - **No filesystem** (`IOAccess.NONE`), no process creation, no thread creation,
   no native access.
+
+**A script cannot freeze the game.** Each handler runs under a ~250ms wall-clock
+budget; a `while (true)` or any runaway loop is interrupted and reported, and the
+script stays loaded (only that one dispatch dies). A 500-million-statement
+ceiling backstops the budget. A normal handler finishes in well under a
+millisecond, so you never approach either limit. The one place a script hands the
+engine unbounded work is a `client.criteria` pattern against untrusted chat, and
+that path is bounded separately (input over 1024 chars never matches; a pattern
+with more than 16 placeholders is rejected at compile).
 
 **Java imports are off by design, not by omission.** That is exactly what makes
 a public script gallery safe to offer: a script's whole reachable surface is the
@@ -358,27 +401,29 @@ the game. So the client still gates untrusted code:
 
 ## Common mistakes
 
-The first two **fail silently** — no error, no chat message, the script just
-quietly does nothing. They are the most common bugs in Opal scripts:
+The `mc.player` mistake **fails silently** — no error, no chat message, the
+script just does nothing. It is the most common bug in Opal scripts:
 
 - **Reading `mc.player` / `mc.world`.** They do not exist; they read as
   `undefined`. `if (mc.player === null) return;` is a guard that never fires
   (`undefined === null` is `false`), so the handler runs on with no player and
   every following call fails. Always
   `if (mc.getPlayer() === null || mc.getWorld() === null) return;`.
-- **Treating a `ScriptList` as an array.** Every listing/collection method
-  (`world.getEntities()`, `world.getLivingEntitiesInRange()`,
-  `modules.listAll()`, `renderer.wrapText()`, `player.getEffects()`, …) returns
-  a `ScriptList`, whose entire surface is `size()`, `isEmpty()`, `get(i)`.
-  `.length` is `undefined`, `[i]` is `undefined`, `for..of` throws, and
-  `Array.from` yields `[]`. Loop with
-  `for (let i = 0; i < list.size(); i++) { const x = list.get(i); }`.
+- **Calling `.map` / `.filter` / `.forEach` on a `ScriptList`.** It reads as an
+  array (`.length`, `list[i]`, `for..of`, spread all work), but it carries no
+  `Array.prototype`, so those methods are `undefined`. Walk it with `for..of`,
+  or `Array.from(list)` first when you need a real array. It is read-only:
+  assigning `list[i]` or calling `.push` never mutates it (and throws in a
+  module/strict script). `list.get(i)` is bounds-safe (returns `null` past the
+  end), while `list[i]` past the end throws — prefer `for..of`.
 - **Raw color literals.** Using `0xAARRGGBB` instead of `renderer.color(...)` —
   truncates and renders the wrong color. Always use the helper.
 - **Drawing outside a render context.** `renderer` calls in `preGameTick` do
   nothing; draw in `renderScreen` / a palette `render` / an island `render`.
-- **Reading a render event's payload.** `event.tickDelta()` and friends throw —
-  render handlers take no argument. Use `client.getTickDelta()`.
+- **Guessing render-payload accessor names.** `renderScreen` exposes
+  `getPartialTicks()` / `getMouseX()` / `getMouseY()` — not `tickDelta()` /
+  `mouseX()`; `renderWorld` / `renderBloom` expose `getPartialTicks()` only.
+  `client.getTickDelta()` is the same value if you skip the argument.
 - **Caching settings.** Reading `getBool/getNumber/getMode` once at registration
   instead of per-use, so live setting changes never take effect.
 - **Leaking resources.** Not calling `destroyIsland` / `destroyImage` on

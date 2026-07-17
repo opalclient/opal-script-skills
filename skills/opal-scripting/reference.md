@@ -16,11 +16,12 @@ This file covers the entry point, the module/settings/event model, and the
   `ScriptBox2D`, `ScriptDirection`, `ScriptRaytracedRotation`, …).
 - [`reference/ui.md`](reference/ui.md) — `renderer` and `palette`.
 
-**Two sandbox rules govern everything below.** The host-access policy is
-default-deny, so: there is no `mc.player`/`mc.world` (property reads are
-`undefined` — call `mc.getPlayer()`/`mc.getWorld()`), and every collection is a
-`ScriptList` with only `size()`/`isEmpty()`/`get(i)` — never an array. Both
-mistakes fail silently.
+**One sandbox rule governs everything below.** The host-access policy is
+default-deny, so there is no `mc.player`/`mc.world` — a property read is
+`undefined`, and the guard `if (mc.player === null)` never fires. Call
+`mc.getPlayer()`/`mc.getWorld()`. Collections are a different story: every one is
+a `ScriptList`, which reads as a read-only JS array (`.length`, `list[i]`,
+`for..of`, spread), and still answers `size()`/`isEmpty()`/`get(i)`.
 
 ## Entry point
 
@@ -91,9 +92,9 @@ you need from the globals (`client.getTickDelta()` for the partial tick).
 | --- | --- | --- | --- |
 | `enable` / `disable` | _(no payload)_ | — | Module lifecycle. `enable` resets suppressed-error tracking; `disable` cleans up owned islands. |
 | `preGameTick` / `postGameTick` | _(no payload)_ | — | Around the 20 TPS client tick. Guard with `mc.getPlayer()`/`mc.getWorld()`. |
-| `renderScreen` | _(no payload)_ | — | 2D HUD render pass — draw here. `drawContext()`/`canvas()`/`mouseX()`/`mouseY()`/`tickDelta()` **all throw**; use `client.getTickDelta()`. |
-| `renderWorld` | _(no payload)_ | — | 3D world render pass — use `esp.*` for projection. `matrixStack()`/`tickDelta()` **throw**. |
-| `renderBloom` | _(no payload)_ | — | Feeds the bloom/glow pass; shapes drawn here don't show directly. Accessors **throw**. |
+| `renderScreen` | `getPartialTicks()`, `getMouseX()`, `getMouseY()` | — | 2D HUD render pass — draw here. Mouse coords are GUI-scaled. `getPartialTicks()` equals `client.getTickDelta()`; the handler may ignore the argument. |
+| `renderWorld` | `getPartialTicks()` | — | 3D world render pass — use `esp.*` for projection. No mouse coords. |
+| `renderBloom` | `getPartialTicks()` | — | Feeds the bloom/glow pass; shapes drawn here don't show directly. No mouse coords. |
 | `joinWorld` | _(no payload)_ | — | Local player joined a world. |
 | `blockUpdate` | `getX()`, `getY()`, `getZ()`, `getOldBlock()`, `getNewBlock()` | no | A loaded block changed state. Block names are display names (`"Air"`, `"Stone"`). |
 | `serverConnect` | `getHost()`, `getPort()`, `getAddress()` | yes | Before connecting to a server. `getAddress()` is `host:port`. |
