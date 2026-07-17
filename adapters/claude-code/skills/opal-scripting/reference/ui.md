@@ -55,16 +55,15 @@ Text (font is one of `"productsans-medium"`, `"productsans-bold"`,
 - `textWidth(fontName, text, size)` → number
 - `textHeight(fontName, text, size)` → number — note `text` is required.
 - `wrapText(fontName, text, width, size)` → `ScriptList<String>` — the lines
-  after wrapping to `width`. Note the order is `text, width, size`. It is a
-  **`ScriptList`, not an array**: `size()` / `get(i)` only — `.length` and
-  `[i]` read as `undefined`, silently.
+  after wrapping to `width`. Note the order is `text, width, size`. A
+  `ScriptList`: array-like (`.length`, `[i]`, `for..of`) and read-only.
 - `trimText(fontName, text, width, size)` → `String` (adds an ellipsis if
   truncated) — note order is `text, width, size`.
 
 ```js
 const lines = renderer.wrapText("productsans-medium", msg, 180, 8);
-for (let i = 0; i < lines.size(); i++) {
-    renderer.text("productsans-medium", lines.get(i), x, y + i * 10, 8, fg);
+for (let i = 0; i < lines.length; i++) {
+    renderer.text("productsans-medium", lines[i], x, y + i * 10, 8, fg);
 }
 ```
 

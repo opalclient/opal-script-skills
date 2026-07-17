@@ -29,7 +29,7 @@ methods above answer what they were used for.
 - `hasAdjacentBlock(pos)` → `boolean` — any face-adjacent block is solid
   (placeable-against).
 - `getAdjacentDirections(pos)` → `ScriptList<ScriptDirection>` — directions with
-  a solid neighbor; can be empty. A `ScriptList`, not an array — see
+  a solid neighbor; can be empty. A `ScriptList`: array-like and read-only — see
   [`core.md`](core.md#scriptlist).
 
 ```js
@@ -45,8 +45,8 @@ const neighbor = below.offset(side);
 
 ### Entity queries
 
-Both return a `ScriptList<ScriptEntity>` — walk it with `size()` / `get(i)`,
-never `.length` / `[i]` / `for..of`. See [`core.md`](core.md#scriptlist).
+Both return a `ScriptList<ScriptEntity>` — array-like and read-only, so `for..of`
+is idiomatic. See [`core.md`](core.md#scriptlist).
 
 - `getEntities()` → `ScriptList<ScriptEntity>` — every entity in the world.
 - `getLivingEntitiesInRange(radius)` → `ScriptList<ScriptEntity>` — mobs +
@@ -111,14 +111,14 @@ off-screen/behind the camera; **always null-check before drawing**.
   `getEntityBox2D` returning non-null.
 
 ```js
-module.on("renderScreen", () => {
-    // No parameter: renderScreen carries no readable payload.
+module.on("renderScreen", (event) => {
+    // renderScreen hands you getPartialTicks()/getMouseX()/getMouseY();
+    // getPartialTicks() equals client.getTickDelta().
     if (mc.getPlayer() === null || mc.getWorld() === null) return;
-    const tickDelta = client.getTickDelta();
+    const tickDelta = event.getPartialTicks();
 
     const entities = world.getLivingEntitiesInRange(64);
-    for (let i = 0; i < entities.size(); i++) {
-        const entity = entities.get(i);
+    for (const entity of entities) {
         const box = esp.getEntityBox2D(entity, tickDelta);
         if (box === null) continue; // off-screen or behind camera
 
@@ -267,8 +267,7 @@ non-living entity, for example. Check the sentinel.
 
 ```js
 const entities = world.getLivingEntitiesInRange(16);
-for (let i = 0; i < entities.size(); i++) {
-    const e = entities.get(i);
+for (const e of entities) {
     if (!e.isPlayer()) continue;
     client.print(e.getName() + " " + e.getHealth() + "/" + e.getMaxHealth());
 }

@@ -22,6 +22,39 @@ theme colors, and system metrics.
 - `runCommand(command)` — runs a command as the player. The leading `/` is
   optional.
 
+### Chat criteria
+
+- `criteria(pattern)` → `ScriptCriteria` — compiles a chat-line template once for
+  reuse across chat events. A `${name}` captures a lazy run of characters bound to
+  `name`; everything outside `${...}` matches literally (regex metacharacters are
+  escaped). `${}` with no name is a discard wildcard. Compile once, outside the
+  handler.
+
+A `ScriptCriteria` has three members:
+
+- `match(line)` → captures object | `null` — a read-only object keyed by
+  placeholder name (`m.player`), or `null` when the line doesn't match. Read a
+  capture as a property; the object carries only the names you declared.
+- `test(line)` → `boolean` — whether the line matches, without building captures.
+- `getPattern()` → `String` — the original template.
+
+Two bounds keep an untrusted chat line from driving catastrophic backtracking: a
+line longer than 1024 characters never matches (the regex is not run), and a
+template with more than 16 placeholders throws at `criteria(...)` compile time.
+
+```js
+// Print who said what, only for real player chat lines.
+const chat = client.criteria("<${player}> ${message}");
+
+script.registerModule({ name: "ChatFilter", description: "Logs player messages" }, (module) => {
+    module.on("chatReceived", (event) => {
+        const m = chat.match(event.getMessage());
+        if (m === null) return;              // system/formatted line — ignore
+        client.print(m.player + " said: " + m.message);
+    });
+});
+```
+
 ### Module access
 
 - `isModuleEnabled(id)` → `boolean`
@@ -135,8 +168,9 @@ throw.
 
 ### Listing
 
-Listing methods return a **`ScriptList<String>`, not an array** — `size()` /
-`isEmpty()` / `get(i)` only. See [ScriptList](#scriptlist) below.
+Listing methods return a **`ScriptList<String>`** — a read-only, array-like view
+(`.length`, `[i]`, `for..of`, spread), also answering `size()` / `isEmpty()` /
+`get(i)`. See [ScriptList](#scriptlist) below.
 
 - `listAll()` → `ScriptList<String>` — every registered module (native + script).
 - `listCategory(category)` → `ScriptList<String>` — `"Combat"`, `"Movement"`,
@@ -155,10 +189,9 @@ script.registerModule({
             client.print("Disabled Flight while KillAura is active");
         }
 
-        // size() + get(i) — a ScriptList has no .length and no [i] indexing.
+        // A ScriptList reads as an array — for..of is idiomatic.
         const combat = modules.listCategory("Combat");
-        for (let i = 0; i < combat.size(); i++) {
-            const name = combat.get(i);
+        for (const name of combat) {
             client.print(name + " -> " + modules.isEnabled(name));
         }
     });
@@ -245,26 +278,29 @@ Every collection any proxy hands back — `world.getEntities()`,
 `renderer.wrapText()`, `movement.yawPos()`, `player.getEffects()`,
 `ScriptEntity.getEffects()` — is a `ScriptList<T>`.
 
-> **A `ScriptList` is not an array and is not iterable.** `.length` and `[i]`
-> read as **`undefined`**, and `Array.from(list)` yields `[]` — all silently,
-> with no error. `for (const x of list)` throws. This is the single most common
-> way an Opal script "works" while doing nothing at all.
+**A `ScriptList` reads as a read-only JS array.** `.length`, `list[i]`,
+`for..of`, spread (`[...list]`), and `Array.from(list)` all work. The three
+original members still work too, so old code keeps running:
 
-The exported surface is exactly three members:
-
-- `size()` → `int` — the element count (`0` when empty).
+- `size()` → `int` — the element count (`0` when empty). Same as `.length`.
 - `isEmpty()` → `boolean`.
 - `get(i)` → `T | null` — the element at zero-based `i`. **Bounds-safe**: an
-  out-of-range index returns `null` rather than throwing.
+  out-of-range index returns `null`, and `list[i]` past the end reads as
+  `undefined` — either is safe, so reach for whichever fits.
 
-The list is read-only; there is no add/remove/sort. Elements are handed out
-as-is and stay subject to the same policy.
+Two limits to keep in mind:
+
+- **It is not a full `Array`.** There is no `Array.prototype`, so `.map`,
+  `.filter`, `.forEach`, `.reduce`, and friends are `undefined`. Use `for..of`,
+  or `Array.from(list)` first when you want array methods.
+- **It is read-only.** No add/remove/sort; assigning `list[i]` or calling
+  `.push` never mutates it (and throws in a module/strict script). Elements are
+  handed out as-is and stay subject to the same host-access policy.
 
 ```js
-// The only correct way to walk a ScriptList:
+// Idiomatic: for..of.
 const entities = world.getLivingEntitiesInRange(64);
-for (let i = 0; i < entities.size(); i++) {
-    const entity = entities.get(i);
+for (const entity of entities) {
     client.print(entity.getName());
 }
 ```
