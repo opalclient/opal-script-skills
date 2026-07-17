@@ -1,9 +1,9 @@
-# Core proxies — client, notification, overlay, modules, mc
+# Core proxies — client, notification, overlay, modules, mc, timer
 
-General client interaction, notifications, HUD islands, module control, and
-the null-safe Minecraft facade. See [`../reference.md`](../reference.md) for
-the module/settings/event model and back to
-[`../SKILL.md`](../SKILL.md) for the overview.
+General client interaction, notifications, HUD islands, module control, the
+null-safe Minecraft facade, and stopwatches. See
+[`../reference.md`](../reference.md) for the module/settings/event model and
+back to [`../SKILL.md`](../SKILL.md) for the overview.
 
 ## Client
 
@@ -17,17 +17,19 @@ theme colors, and system metrics.
 - `print(o)` — prints `o` (via `toString()`) to local chat only.
 - `success(message)` — green-styled local chat message.
 - `error(message)` — red-styled local chat message.
+- `sendChat(message)` — sends `message` to the server as a real chat message.
+  Unlike `print`, other players see it.
+- `runCommand(command)` — runs a command as the player. The leading `/` is
+  optional.
 
 ### Module access
 
-- `getModule(id)` → `Module` — looks up a registered module by display name
-  (case-insensitive). **Throws if not found.**
 - `isModuleEnabled(id)` → `boolean`
 - `setModuleEnabled(id, enabled)`
 
-Prefer the dedicated `modules` global (below) for state queries and toggling —
-it never throws on a missing name. Use `client.getModule` only when you need
-the `Module` object itself.
+There is **no `client.getModule`** — it was removed. A script never handles a
+`Module` object; drive modules by id through these two methods or, preferably,
+the dedicated `modules` global (below), which also covers metadata and listing.
 
 ### Screen & display
 
@@ -114,7 +116,7 @@ native modules, reading metadata, and listing modules by category. All lookups
 are **case-insensitive**, and names are matched after spaces normalize to
 underscores (`"Kill Aura"` and `"killaura"` resolve the same target). Every
 method returns a safe default if the module doesn't exist — `false` for
-booleans, `null` for strings, an empty array for listings. Lookups never
+booleans, `null` for strings, an empty `ScriptList` for listings. Lookups never
 throw.
 
 ### State
@@ -133,13 +135,14 @@ throw.
 
 ### Listing
 
-Listing methods return JS-iterable string arrays (`.length` + indexing).
+Listing methods return a **`ScriptList<String>`, not an array** — `size()` /
+`isEmpty()` / `get(i)` only. See [ScriptList](#scriptlist) below.
 
-- `listAll()` → `String[]` — every registered module (native + script).
-- `listCategory(category)` → `String[]` — `"Combat"`, `"Movement"`, `"Visual"`,
-  `"World"`, `"Utility"`, or `"Scripts"`. Case-insensitive; empty array if
-  invalid.
-- `listEnabled()` → `String[]` — every currently enabled module.
+- `listAll()` → `ScriptList<String>` — every registered module (native + script).
+- `listCategory(category)` → `ScriptList<String>` — `"Combat"`, `"Movement"`,
+  `"Visual"`, `"World"`, `"Utility"`, or `"Scripts"`. Case-insensitive; empty
+  list if invalid.
+- `listEnabled()` → `ScriptList<String>` — every currently enabled module.
 
 ```js
 script.registerModule({
@@ -152,9 +155,11 @@ script.registerModule({
             client.print("Disabled Flight while KillAura is active");
         }
 
+        // size() + get(i) — a ScriptList has no .length and no [i] indexing.
         const combat = modules.listCategory("Combat");
-        for (let i = 0; i < combat.length; i++) {
-            client.print(combat[i] + " -> " + modules.isEnabled(combat[i]));
+        for (let i = 0; i < combat.size(); i++) {
+            const name = combat.get(i);
+            client.print(name + " -> " + modules.isEnabled(name));
         }
     });
 });
@@ -166,31 +171,100 @@ script.registerModule({
 
 **Global binding:** `mc`
 
-A thin, null-safe facade over the Minecraft client — it exists so scripts can
-reach the client without touching intermediary-named fields (GraalVM JS would
-otherwise see something like `field_1724` instead of `player` under Fabric
-intermediary mappings).
+A thin, null-safe facade over the Minecraft client — it exists so scripts reach
+the client through stable, exported names instead of the raw client object,
+which the sandbox makes unreadable.
 
-- `mc.player` — `LocalPlayer | null`. **Null-check only** — use the `player`
-  global for state and movement methods.
-- `mc.world` — `ClientLevel | null`. **Null-check only** — use the `world`
-  global for block/entity queries.
-- `mc.interactionManager` — `InteractionManagerProxy`. See
+> **There is no `mc.player` and no `mc.world`.** The sandbox does no
+> bean-property mapping, so the property form reads as **`undefined`** — and
+> `undefined === null` is `false`, which makes `if (mc.player === null) return;`
+> a guard that **never fires**. It does not throw; the handler simply runs on
+> with no player. Call the getters.
+
+- `getPlayer()` → `ScriptEntity | null` — the local player. **The null guard.**
+  It is also readable like any other `ScriptEntity` (name, health, position),
+  but for local-player state and movement prefer the richer `player` global.
+- `getWorld()` → opaque token | `null` — **null-guard use only.** The returned
+  value has no readable members: the host hands it back and a script can only
+  compare it against `null` (which needs no member access). Every real world
+  query lives on the `world` global.
+- `mc.interactionManager` — `InteractionManagerProxy`. This one **is** a
+  property, because it is an exported *field* rather than a getter. See
   [`character.md`](character.md#interaction-manager) for its 7 methods.
-
-`getPlayer()` / `getWorld()` / `getInteractionManager()` accessor methods also
-exist (kept for completeness); prefer the public fields above.
-
-Do not call methods directly on `mc.player` / `mc.world` by readable name —
-Fabric's intermediary mappings rename them at runtime and the call fails. Use
-the `player` / `world` / `inventory` / `movement` / `rotation` proxy globals
-instead.
+  `getInteractionManager()` exists too; prefer the field.
 
 ```js
 module.on("preGameTick", () => {
     // The idiomatic guard, at the top of every event callback:
-    if (mc.player === null || mc.world === null) return;
+    if (mc.getPlayer() === null || mc.getWorld() === null) return;
 
     client.print("Health: " + player.getHealth());
 });
+```
+
+---
+
+## Timer
+
+**Global binding:** `timer`
+
+Millisecond stopwatches — the idiomatic way to rate-limit an action across
+ticks without counting them by hand.
+
+- `create()` → `ScriptTimer` — a new stopwatch, started now.
+- `now()` → `long` — the current clock in milliseconds.
+
+A `ScriptTimer` has exactly four members:
+
+- `reset()` — restarts it from now.
+- `elapsed()` → `long` — milliseconds since the last reset.
+- `passed(ms)` → `boolean` — whether at least `ms` have elapsed.
+- `passedAndReset(ms)` → `boolean` — `passed(ms)`, and resets when it returns
+  `true`. The one-call idiom for "do this at most every `ms`".
+
+```js
+script.registerModule({ name: "Pinger", description: "Chats on an interval" }, (module) => {
+    const cooldown = timer.create();
+
+    module.on("preGameTick", () => {
+        if (mc.getPlayer() === null || mc.getWorld() === null) return;
+        if (cooldown.passedAndReset(5000)) {
+            notification.info("Pinger", "5s tick");
+        }
+    });
+});
+```
+
+---
+
+## ScriptList
+
+Every collection any proxy hands back — `world.getEntities()`,
+`world.getLivingEntitiesInRange()`, `world.getAdjacentDirections()`,
+`modules.listAll()`, `modules.listCategory()`, `modules.listEnabled()`,
+`renderer.wrapText()`, `movement.yawPos()`, `player.getEffects()`,
+`ScriptEntity.getEffects()` — is a `ScriptList<T>`.
+
+> **A `ScriptList` is not an array and is not iterable.** `.length` and `[i]`
+> read as **`undefined`**, and `Array.from(list)` yields `[]` — all silently,
+> with no error. `for (const x of list)` throws. This is the single most common
+> way an Opal script "works" while doing nothing at all.
+
+The exported surface is exactly three members:
+
+- `size()` → `int` — the element count (`0` when empty).
+- `isEmpty()` → `boolean`.
+- `get(i)` → `T | null` — the element at zero-based `i`. **Bounds-safe**: an
+  out-of-range index returns `null` rather than throwing.
+
+The list is read-only; there is no add/remove/sort. Elements are handed out
+as-is and stay subject to the same policy.
+
+```js
+// The only correct way to walk a ScriptList:
+const entities = world.getLivingEntitiesInRange(64);
+for (let i = 0; i < entities.size(); i++) {
+    const entity = entities.get(i);
+    client.print(entity.getName());
+}
 ```

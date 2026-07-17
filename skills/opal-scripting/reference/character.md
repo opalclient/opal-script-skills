@@ -2,34 +2,36 @@
 
 Local player state, movement, rotation, inventory, and block/entity
 interaction. See [`../reference.md`](../reference.md) for the module/event
-model and [`world.md`](world.md) for the `BlockPos` / `Vec2f` / `Direction` /
-`RaytracedRotation` wrapper types these methods pass around.
+model and [`world.md`](world.md) for the `BlockPos` / `Vec2f` / `Vec3d`
+globals and the `ScriptVec3` / `ScriptEntity` / `ScriptBox3D` /
+`ScriptItemStack` wrapper types these methods pass around.
 
 ## Player
 
 **Global binding:** `player`
 
-Every method reads from `mc.player`, which is `null` on the main menu, during
+Every method reads the local player, which is absent on the main menu, during
 world loads, and between disconnects — guard every handler with
-`if (mc.player === null) return;`. Entity helpers fail soft on a non-living
-entity: `getDistanceToEntity()` returns `-1.0`, `getClosestPoint()` returns
-`null` — test for those sentinels.
+`if (mc.getPlayer() === null) return;`. (**Not** `mc.player`: that property
+does not exist, reads `undefined`, and makes the guard a silent no-op.) Entity
+helpers fail soft on a non-living entity: `getDistanceToEntity()` returns
+`-1.0`, `getClosestPoint()` returns `null` — test for those sentinels.
 
 ### Position
 
-- `getEyePosition()` → `Vec3d` — eye position in world space; the raycast
+- `getEyePosition()` → `ScriptVec3` — eye position in world space; the raycast
   origin.
-- `getPosition()` → `Vec3d` — alias of `getEyePosition()`.
-- `getBlockPosition()` → `BlockPos` — floored block coordinates, with readable
+- `getPosition()` → `ScriptVec3` — alias of `getEyePosition()`.
+- `getBlockPosition()` → `BlockPos` — floored block coordinates, with
   `getX()`/`getY()`/`getZ()`.
-- `getVelocity()` → `Vec3d` — current per-tick velocity (delta movement).
+- `getVelocity()` → `ScriptVec3` — current per-tick velocity (delta movement).
 - `getYaw()` / `getPitch()` → `float` — current rotation in degrees.
 - `getFallDistance()` → `double` — blocks fallen since last touching ground.
 
-`getEyePosition()`, `getPosition()`, and `getVelocity()` return raw `Vec3d`
-values — intermediary-named at runtime, not callable by readable name. Pass
-them into proxy methods (`rotation.getRotationFromPosition`,
-`esp.projectVec`), or use `getBlockPosition()` for readable coordinates.
+The `ScriptVec3` values are fully readable — `getX()` / `getY()` / `getZ()`,
+plus `length()`, `distanceTo(other)`, `add(other)`, `subtract(other)`. Property
+access (`pos.x`) reads `undefined`; always use the getters. Pass them into proxy
+methods (`rotation.getRotationFromPosition`, `esp.projectVec`) as-is.
 
 ### State
 
@@ -39,9 +41,27 @@ them into proxy methods (`rotation.getRotationFromPosition`,
 - `isSneaking()` / `isSprinting()` → `boolean`
 - `isUsingItem()` → `boolean` — eating, blocking, drawing a bow, etc.
 
-### Health
+### Health & effects
 
 - `getHealth()` / `getMaxHealth()` / `getAbsorption()` → `float`
+- `getArmor()` → `int` — total armour points (0–20).
+- `hasEffect(name)` → `boolean` — whether the effect is active. `name` takes
+  either `"speed"` or `"minecraft:speed"`.
+- `getEffect(name)` → `ScriptEffect | null` — `null` when not active.
+- `getEffects()` → `ScriptList<ScriptEffect>` — every active effect. A
+  `ScriptList`, not an array: `size()` / `get(i)`.
+
+Mind `ScriptEffect`'s two level conventions: `getAmplifier()` is **0-based**
+(vanilla — Speed II is `1`), `getLevel()` is **1-based** (display — Speed II is
+`2`). `getDurationSeconds()` returns **`-1`** when the effect is infinite. Full
+member table in [`world.md`](world.md#scripteffect).
+
+```js
+// Only sprint-boost when Speed isn't already doing the work.
+if (!player.hasEffect("speed")) {
+    movement.setSpeed(0.35);
+}
+```
 
 ### Combat
 
@@ -53,15 +73,20 @@ them into proxy methods (`rotation.getRotationFromPosition`,
 
 ### Entity utilities
 
+`entity` is a `ScriptEntity` — from `world.getLivingEntitiesInRange()`,
+`world.getEntities()`, or `AttackEvent.getTarget()`.
+
 - `getDistanceToEntity(entity)` → `double` — bounding-box-to-bounding-box
   distance, or `-1.0` if not living.
-- `getClosestPoint(entity)` → `Vec3d | null` — closest point on the entity's
-  box to the player's eye (the point KillAura aims at); `null` if not living.
+- `getClosestPoint(entity)` → `ScriptVec3 | null` — closest point on the
+  entity's box to the player's eye (the point KillAura aims at); `null` if not
+  living.
 - `isBoxEmpty(dx, dy, dz)` → `boolean` — whether the player's box, offset by
   `(dx, dy, dz)`, has no collisions.
 - `isBoxEmptyBelow(dy)` → `boolean` — Scaffold-style edge check for the space
   below at offset `dy` (typically negative).
-- `getBoundingBox()` → `AABB`
+- `getBoundingBox()` → `ScriptBox3D` — read via `getMinX()` … `getMaxZ()`,
+  `getWidth()` / `getHeight()` / `getDepth()`.
 - `getStandingEyeHeight()` → `float`
 
 ### Actions
@@ -73,7 +98,7 @@ them into proxy methods (`rotation.getRotationFromPosition`,
 ```js
 // Aim at and attack the nearest reachable living entity.
 module.on("preGameTick", () => {
-    if (mc.player === null || mc.world === null) return;
+    if (mc.getPlayer() === null || mc.getWorld() === null) return;
 
     const targets = world.getLivingEntitiesInRange(player.getEntityInteractionRange());
     if (targets.isEmpty()) return;
@@ -108,9 +133,12 @@ are in degrees unless the method name ends in `Radians`.
 
 ### Speed manipulation
 
-- `yawPos(yaw, value)` → `double[]` — `[deltaX, deltaZ]` offset for a yaw
-  direction and distance.
-- `setEntitySpeed(entity, speed, yaw)` — sets an arbitrary entity's velocity.
+- `yawPos(yaw, value)` → `ScriptList<Double>` — the `[deltaX, deltaZ]` offset
+  for a yaw direction and distance. A **`ScriptList`, not an array**: read it
+  with `get(0)` / `get(1)`, never `[0]` / `[1]` (those are silently
+  `undefined`).
+- `setEntitySpeed(entity, speed, yaw)` — sets an arbitrary `ScriptEntity`'s
+  velocity.
 - `setSpeed(speed)` — sets the player's speed along the current input
   direction.
 - `setSpeed(speed, strafePercentage)` — blends forward (`0.0`) and strafe
@@ -125,7 +153,9 @@ are in degrees unless the method name ends in `Radians`.
 ### Direction
 
 - `getMoveYaw()` → `float` — current movement yaw from WASD input + camera.
-- `getMoveYaw(from, to)` → `float` — yaw between two `Vector2d` positions.
+- `getMoveYaw(fromX, fromZ, toX, toZ)` → `float` — yaw from one point to
+  another. **Four plain numbers**, and they are world **X and Z** (not Y): the
+  old two-vector form is no longer script-callable.
 - `getDirectionDegrees([yaw])` / `getDirectionRadians([yaw])` → `float`/`double`
   — current (or yaw-relative) movement direction.
 - `getDirection(rotationYaw, moveForward, moveStrafing)` → `double` — exact
@@ -169,33 +199,36 @@ target every tick (e.g. from `preGameTick`) rather than once.
 
 ### Rotation calculation (stateless)
 
-- `getRotationFromPosition(pos)` → `Vec2f` — yaw/pitch to look at a world
-  position.
-- `getRotationFromBlock(blockPos, direction)` → `Vec2f` — yaw/pitch to look at
-  the center of a block face.
+- `getRotationFromPosition(pos)` → `ScriptVec2f` — yaw/pitch to look at a world
+  position. `pos` is a `Vec3d`/`ScriptVec3`.
+- `getRotationFromBlock(blockPos, direction)` → `ScriptVec2f` — yaw/pitch to
+  look at the center of a block face.
 - `getRotationFromRaycastedBlock(blockPos, side, priorityRotations, playerPos)`
-  → `RaytracedRotation | null` — validates a rotation actually hits the
+  → `ScriptRaytracedRotation | null` — validates a rotation actually hits the
   intended block face within reach (the method Scaffold uses).
 - `getRotationFromRaycastedEntity(entity, closestVector, range)` →
-  `RaytracedRotation | null` — validates a rotation hits a living entity
+  `ScriptRaytracedRotation | null` — validates a rotation hits a living entity
   within range (the method KillAura uses).
-- `getRotationVector(pitch, yaw)` → `Vec3d` — unit look vector.
+- `getRotationVector(pitch, yaw)` → `ScriptVec3` — unit look vector.
+
+A `ScriptVec2f` is read with **`getYaw()` / `getPitch()`** — there is no `.x` /
+`.y` (and no `x = yaw, y = pitch` convention to remember).
 
 Both raycast methods return `null` when no valid rotation reaches the target —
 always null-check before using the result.
 
 ### Rotation queries & math
 
-- `getRotation()` → `Vec2f` — current server-side rotation.
-- `getRotationDifference(a, b)` → `float` — angular difference, wrap-aware.
+- `getRotation()` → `ScriptVec2f` — current server-side rotation.
+- `getRotationDifference(a, b)` → `float` — angular difference between two `ScriptVec2f`, wrap-aware.
 - `getCursorDelta(rotationDelta, sensitivityMultiplier)` → `double`.
-- `patchConstantRotation(rotation, prevRotation)` → `Vec2f` — adds jitter to
+- `patchConstantRotation(rotation, prevRotation)` → `ScriptVec2f` — adds jitter to
   avoid constant-delta detection.
 - `getSensitivityModifiedRotation(original)` → `float` — snaps to Minecraft's
   sensitivity grid.
-- `getSentRotation(original)` → `Vec2f` — full sensitivity + vanilla transform.
-- `getSensitivityModifiedRotationVec(original)` → `Vec2f`.
-- `getVanillaRotation(original)` → `Vec2f`.
+- `getSentRotation(original)` → `ScriptVec2f` — full sensitivity + vanilla transform.
+- `getSensitivityModifiedRotationVec(original)` → `ScriptVec2f`.
+- `getVanillaRotation(original)` → `ScriptVec2f`.
 - `getDuplicateWrapped(value, target)` → `float` — avoids duplicate-angle
   detection.
 
@@ -208,7 +241,7 @@ always null-check before using the result.
 ```js
 // Scaffold-style: raycast the block below, aim at it, and place.
 module.on("preGameTick", () => {
-    if (mc.player === null || mc.world === null) return;
+    if (mc.getPlayer() === null || mc.getWorld() === null) return;
 
     const feet = player.getBlockPosition();
     const below = new BlockPos(feet.getX(), feet.getY() - 1, feet.getZ());
@@ -239,8 +272,8 @@ module.on("preGameTick", () => {
 
 Hotbar slots are `0`–`8`; the full inventory is `0`–`35` (hotbar `0`–`8`, main
 inventory `9`–`35`). Search/count helpers match display name as a
-case-insensitive substring. All methods read `mc.player` without an internal
-null guard — check `if (mc.player === null) return;` first.
+case-insensitive substring. All methods read the local player without an
+internal null guard — check `if (mc.getPlayer() === null) return;` first.
 
 ### Slot switching
 
@@ -263,8 +296,10 @@ null guard — check `if (mc.player === null) return;` first.
 
 ### Stack inspection
 
-- `getStack(slot)` → `ItemStack`
-- `getMainHandStack()` / `getOffHandStack()` → `ItemStack` (main-hand resolves
+- `getStack(slot)` → `ScriptItemStack` — read with `getName()` / `getId()` /
+  `getCount()` / `isEmpty()` / `isBlock()` / `isDamageable()` / `getDamage()` /
+  `getMaxDamage()`. See [`world.md`](world.md#scriptitemstack).
+- `getMainHandStack()` / `getOffHandStack()` → `ScriptItemStack` (main-hand resolves
   through the same silent-switch state as `setSlotSilent`).
 - `isHeldItemBlock()` → `boolean` — main hand holds a placeable block.
 - `isBlock(slot)` → `boolean`
@@ -275,7 +310,7 @@ null guard — check `if (mc.player === null) return;` first.
 
 ```js
 module.on("preGameTick", () => {
-    if (mc.player === null) return;
+    if (mc.getPlayer() === null) return;
 
     const blockSlot = inventory.findBlock();
     if (blockSlot !== -1) {
@@ -300,7 +335,8 @@ automatically, and every method is null-guarded internally.
 ### Block interaction
 
 - `interactBlock(hand, hitResult)` — right-clicks a block face. `hitResult`
-  comes from a `RaytracedRotation.getHitResult()`.
+  comes from a `ScriptRaytracedRotation.getHitResult()` and is an opaque token —
+  pass it straight through, never read from it.
 - `updateBlockBreakingProgress(pos, direction)` → `boolean` — advances
   block-breaking progress on the given face.
 - `cancelBlockBreaking()` — cancels any in-progress break.
@@ -308,7 +344,7 @@ automatically, and every method is null-guarded internally.
 
 ### Entity & item interaction
 
-- `attackEntity(entity)` — attacks with the main hand.
+- `attackEntity(entity)` — attacks the given `ScriptEntity` with the main hand.
 - `interactItem(hand)` — right-click use without targeting (throw a pearl,
   eat, etc.).
 - `stopUsingItem()` — stops current use (release a bow, stop eating).
