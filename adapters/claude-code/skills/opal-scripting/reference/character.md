@@ -49,7 +49,7 @@ methods (`rotation.getRotationFromPosition`, `esp.projectVec`) as-is.
   either `"speed"` or `"minecraft:speed"`.
 - `getEffect(name)` → `ScriptEffect | null` — `null` when not active.
 - `getEffects()` → `ScriptList<ScriptEffect>` — every active effect. A
-  `ScriptList`, not an array: `size()` / `get(i)`.
+  `ScriptList`: array-like (`for..of`, `.length`, `[i]`), read-only.
 
 Mind `ScriptEffect`'s two level conventions: `getAmplifier()` is **0-based**
 (vanilla — Speed II is `1`), `getLevel()` is **1-based** (display — Speed II is
@@ -134,9 +134,8 @@ are in degrees unless the method name ends in `Radians`.
 ### Speed manipulation
 
 - `yawPos(yaw, value)` → `ScriptList<Double>` — the `[deltaX, deltaZ]` offset
-  for a yaw direction and distance. A **`ScriptList`, not an array**: read it
-  with `get(0)` / `get(1)`, never `[0]` / `[1]` (those are silently
-  `undefined`).
+  for a yaw direction and distance. A two-element `ScriptList`: read it with
+  `[0]` / `[1]` or `get(0)` / `get(1)`.
 - `setEntitySpeed(entity, speed, yaw)` — sets an arbitrary `ScriptEntity`'s
   velocity.
 - `setSpeed(speed)` — sets the player's speed along the current input
@@ -271,9 +270,10 @@ module.on("preGameTick", () => {
 **Global binding:** `inventory`
 
 Hotbar slots are `0`–`8`; the full inventory is `0`–`35` (hotbar `0`–`8`, main
-inventory `9`–`35`). Search/count helpers match display name as a
-case-insensitive substring. All methods read the local player without an
-internal null guard — check `if (mc.getPlayer() === null) return;` first.
+inventory `9`–`35`). The name-based search/count helpers match display name as a
+case-insensitive substring; the `*ById` helpers match the stable registry id
+exactly. All methods read the local player without an internal null guard —
+check `if (mc.getPlayer() === null) return;` first.
 
 ### Slot switching
 
@@ -293,6 +293,11 @@ internal null guard — check `if (mc.getPlayer() === null) return;` first.
   case-insensitive), or `-1`.
 - `findItemInInventory(name)` → `int` — same search across the full inventory
   (`0`–`35`), or `-1`.
+- `findItemById(id)` → `int` — hotbar slot holding the item with registry `id`,
+  or `-1`. `id` is `"diamond"` or `"minecraft:diamond"` (default namespace
+  `minecraft`). Prefer this over `findItem` for logic: the display name is
+  locale-dependent and anvil-renameable, the registry id is not. Matches
+  `ScriptItemStack.getId()`.
 
 ### Stack inspection
 
@@ -305,7 +310,11 @@ internal null guard — check `if (mc.getPlayer() === null) return;` first.
 - `isBlock(slot)` → `boolean`
 - `getItemName(slot)` → `String`
 - `getItemCount(slot)` → `int`
-- `countItem(name)` → `int` — total across the whole inventory.
+- `countItem(name)` → `int` — total across the whole inventory (display-name
+  substring).
+- `countItemById(id)` → `int` — total across the whole inventory (`0`–`35`) of
+  the item with registry `id`, bare or namespaced. The id-keyed counterpart to
+  `countItem`; use it when the count feeds logic.
 - `countBlocks()` → `int` — total placeable blocks in hotbar + off hand.
 
 ```js
