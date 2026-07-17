@@ -410,8 +410,8 @@ script just does nothing. It is the most common bug in Opal scripts:
   `Array.prototype`, so those methods are `undefined`. Walk it with `for..of`,
   or `Array.from(list)` first when you need a real array. It is read-only:
   assigning `list[i]` or calling `.push` never mutates it (and throws in a
-  module/strict script). `list.get(i)` is bounds-safe (returns `null` past the
-  end), while `list[i]` past the end throws — prefer `for..of`.
+  module/strict script). Both index paths are bounds-safe: `list.get(i)` past
+  the end returns `null`, and `list[i]` past the end reads as `undefined`.
 - **Raw color literals.** Using `0xAARRGGBB` instead of `renderer.color(...)` —
   truncates and renders the wrong color. Always use the helper.
 - **Drawing outside a render context.** `renderer` calls in `preGameTick` do

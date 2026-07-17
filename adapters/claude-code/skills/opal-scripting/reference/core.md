@@ -285,8 +285,8 @@ original members still work too, so old code keeps running:
 - `size()` → `int` — the element count (`0` when empty). Same as `.length`.
 - `isEmpty()` → `boolean`.
 - `get(i)` → `T | null` — the element at zero-based `i`. **Bounds-safe**: an
-  out-of-range index returns `null`. (`list[i]` past the end throws instead, so
-  prefer `for..of` or `get(i)` when the index might be out of range.)
+  out-of-range index returns `null`, and `list[i]` past the end reads as
+  `undefined` — either is safe, so reach for whichever fits.
 
 Two limits to keep in mind:
 
