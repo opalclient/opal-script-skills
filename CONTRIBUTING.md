@@ -18,7 +18,7 @@ Thanks for helping improve the Opal scripting skill.
    `HostAccess.EXPLICIT` (default-deny). No annotation → it does not exist for
    scripts. Verify against the proxy class before documenting a member; do not
    trust an existing doc, typing, or example. The shipped scripts
-   (`ScriptScaffold.js`, `Pacman.js`) are useful for idiom but some lag the
+   (`ScriptScaffold.js`, `Chomp.js`) are useful for idiom but some lag the
    current API — do not treat them as authoritative. Do not invent methods or
    globals.
 3. Keep `SKILL.md` tight and skimmable; put depth in `reference.md` /

@@ -237,5 +237,5 @@ palette.openView(view);   // or palette.openView("hello")
 ```
 
 See [`../palette-views.md`](../palette-views.md) for a complete worked
-example (a bouncing-ball clicker), and the shipped `Pacman.js` for the
+example (a bouncing-ball clicker), and the shipped `Chomp.js` for the
 flagship full-featured demonstration.

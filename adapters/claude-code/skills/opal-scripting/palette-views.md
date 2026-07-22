@@ -3,7 +3,7 @@
 `palette.createView` is Opal's flagship scripting surface: it registers a custom
 **command-palette view** — a mini-app or game that takes over the palette's
 content rectangle, draws every frame, and receives keyboard / mouse input. The
-shipped `Pacman.js` is a full example; this is the minimal one.
+shipped `Chomp.js` is a full example; this is the minimal one.
 
 ## The shape of a view
 
@@ -121,7 +121,7 @@ Open it from the palette by searching its title, or eagerly with
 
 ## Tips
 
-- **One engine, two surfaces.** As `Pacman.js` shows, you can share a pure
+- **One engine, two surfaces.** As `Chomp.js` shows, you can share a pure
   update/render engine between a palette view and a `renderScreen` overlay
   module. In the palette you get `dt` for free; in `renderScreen` you compute it
   yourself (e.g. from `Date.now()`).
