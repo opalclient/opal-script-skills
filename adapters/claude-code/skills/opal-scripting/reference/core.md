@@ -270,6 +270,28 @@ script.registerModule({ name: "Pinger", description: "Chats on an interval" }, (
 
 ---
 
+## Storage
+
+**Global binding:** `storage`
+
+Persistent per-script key-value storage — survives client restarts. Values
+are strings; serialize structure with `JSON.stringify`/`JSON.parse`. Caps:
+32 keys, 8 KB per value, 64 KB total, key length 64 — violations throw.
+
+- `set(key, value)` — stores a string. Writes to disk immediately (atomic).
+- `get(key)` → `string | null` — `null` when absent.
+- `remove(key)` → `boolean` — whether the key existed.
+- `keys()` → `ScriptList<string>` — snapshot of stored key names.
+
+```js
+const best = JSON.parse(storage.get("highscore") ?? "0");
+if (score > best) {
+    storage.set("highscore", JSON.stringify(score));
+}
+```
+
+---
+
 ## ScriptList
 
 Every collection any proxy hands back — `world.getEntities()`,
