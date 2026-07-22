@@ -48,7 +48,7 @@ mechanisms — they must never drift from `skills/opal-scripting/`.
   **only** if it carries `@HostAccess.Export` (the sandbox is
   `HostAccess.EXPLICIT`, default-deny). No annotation → it does not exist for
   scripts, whatever any doc, typing, or example claims. The shipped scripts
-  (`ScriptScaffold.js`, `Pacman.js`) are the idiom reference. Do not invent
+  (`ScriptScaffold.js`, `Chomp.js`) are the idiom reference. Do not invent
   methods or globals, and verify before documenting — docs promising members
   the sandbox denies is exactly how this skill has shipped bugs before.
 - **The two silent traps.** `mc.player`/`mc.world` do not exist (getters only:

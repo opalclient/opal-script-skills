@@ -95,7 +95,7 @@ Don't want to run the installer? Copy a ready-made surface from
 ## In-client docs
 
 The authoritative reference is the client itself. Reference scripts ship in the
-Opal install under `opal/scripts` (`ScriptScaffold.js`, `Pacman.js`); read them
+Opal install under `opal/scripts` (`ScriptScaffold.js`, `Chomp.js`); read them
 for idiomatic usage. Scripts run in a default-deny sandbox, and community
 scripts are additionally quarantined to `opal/scripts/pending` behind an
 explicit **"Trust & run"**; see [`SECURITY.md`](SECURITY.md).

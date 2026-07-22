@@ -35,7 +35,7 @@ This skill is the source of truth. Companion files go deeper:
 - `palette-views.md` — a complete worked example of a custom palette view.
 
 Reference scripts ship inside the client at `opal/scripts` (`ScriptScaffold.js`,
-`Pacman.js`) — read them for *idiom* (structure, naming, how a module is laid
+`Chomp.js`) — read them for *idiom* (structure, naming, how a module is laid
 out), not for API truth. Some of them predate the current API and still call
 members that no longer exist. Where a shipped script and this skill disagree,
 **this skill is right**; copy its examples, not theirs.
