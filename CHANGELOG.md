@@ -69,6 +69,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the world/pos isn't available — a locale-safe alternative to
   `getBlockName()` for matching, since the latter returns a localized display
   name that breaks substring matching on non-English clients.
+- A pointer to the official public scripts repo,
+  [`opalclient/scripts`](https://github.com/opalclient/scripts)
+  (folder-per-script, `manifest.json`, TS template bundled via esbuild, PR flow
+  with CI gates, `<id>@<version>` releases), in `README.md` and `SKILL.md` —
+  its flagship example is **Chomp**, a roguelite arcade script using `storage`.
 
 ### Removed
 

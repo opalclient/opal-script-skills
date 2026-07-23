@@ -100,6 +100,12 @@ for idiomatic usage. Scripts run in a default-deny sandbox, and community
 scripts are additionally quarantined to `opal/scripts/pending` behind an
 explicit **"Trust & run"**; see [`SECURITY.md`](SECURITY.md).
 
+Finished scripts go in the official
+[`opalclient/scripts`](https://github.com/opalclient/scripts) repo:
+folder-per-script, a `manifest.json`, a TS template bundled via esbuild, and a
+PR flow with CI gates — releases are tagged `<id>@<version>`. Its flagship
+example is **Chomp**, a roguelite arcade script that exercises `storage`.
+
 ## For AI agents
 
 If you are an AI assistant working in this repo:

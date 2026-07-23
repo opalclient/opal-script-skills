@@ -40,6 +40,14 @@ out), not for API truth. Some of them predate the current API and still call
 members that no longer exist. Where a shipped script and this skill disagree,
 **this skill is right**; copy its examples, not theirs.
 
+Finished scripts don't stay local — they go through the official
+[`opalclient/scripts`](https://github.com/opalclient/scripts) repo:
+folder-per-script, a `manifest.json`, a TS template bundled via esbuild, and a
+PR flow with CI gates, releasing as `<id>@<version>`. Its flagship example,
+**Chomp** (a roguelite arcade script that uses `storage`), is a more current
+worked example than the in-client copy — prefer it when you need to see a full
+script, not just a snippet.
+
 ## Anatomy of a script
 
 Every script starts by registering itself, then registers one or more modules.
