@@ -16,12 +16,18 @@ All take a `BlockPos`.
 - `isAir(pos)` → `boolean`
 - `isReplaceable(pos)` → `boolean` — air, fluid, grass, etc.
 - `isSolid(pos)` → `boolean`
+- `getBlockId(pos)` → `String | null` — registry id, e.g. `"minecraft:stone"`;
+  `null` when the world or block isn't available. **Locale-safe** — unlike
+  `getBlockName()`, which returns a localized display name, a registry id is
+  stable across languages. Prefer `getBlockId` whenever you're matching a
+  block (`=== "minecraft:stone"`, substring checks, etc.); reach for
+  `getBlockName` only when displaying text to the player.
 - `getBlockName(pos)` → `String` — localized display name.
 - `getBlockHardness(pos)` → `float` — breaking hardness; `-1` means
   unbreakable (bedrock).
 
 There is **no `getBlockState(pos)` and no `getBlock(pos)`** — both were removed.
-They returned raw Mojang objects a script could read nothing off. The five
+They returned raw Mojang objects a script could read nothing off. The six
 methods above answer what they were used for.
 
 ### Block helpers
@@ -231,11 +237,12 @@ const dist = eye.distanceTo(player.getPosition());  // getters, never eye.x
 double-valued `ScriptVec3` can't back it, and `BlockPos` already is the
 integer-valued point type. Use `BlockPos`.
 
-### MathHelper — dead global
+### MathHelper — removed
 
-`MathHelper` is bound to the raw `Mth` class, which has **nothing**
-allow-listed, so **every call on it is denied**. It is not merely awkward; it
-is unusable. Treat it as unavailable.
+**`MathHelper` no longer exists as a global.** It used to bind the raw `Mth`
+class, but nothing on it was ever allow-listed — every call was denied even
+while the binding existed — and it has now been removed outright rather than
+left in place as dead weight.
 
 Use JavaScript's built-in `Math` instead — it covers `abs`, `floor`, `ceil`,
 `round`, `min`, `max`, `pow`, `sqrt`, the trig functions, `hypot`, and
@@ -333,8 +340,8 @@ An item stack from `inventory.getStack(slot)` / `getMainHandStack()` /
 ### Color
 
 The standard `java.awt.Color`, bound as `Color`. Its two constructors and
-`getRGB()` are explicitly allow-listed, so unlike `MathHelper` it genuinely
-works — use it as an alternative to `renderer.color(r, g, b, a)`.
+`getRGB()` are explicitly allow-listed, so — unlike the removed `MathHelper`
+— it genuinely works. Use it as an alternative to `renderer.color(r, g, b, a)`.
 
 ```js
 const c = new Color(255, 80, 0, 200);

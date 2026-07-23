@@ -192,13 +192,14 @@ method names — construct with `new BlockPos(x, y, z)` / `new Vec2f(yaw, pitch)
 constants. `Color` (`java.awt.Color`) is allow-listed for its constructors and
 `getRGB()`, so `new Color(r, g, b, a).getRGB()` works.
 
-Two globals that older docs promise are **gone or unusable**:
+Two globals that older docs promise are **gone**:
 
 - **`Vec3i` no longer exists.** It was integer-valued; `BlockPos` is the
   integer-valued point type.
-- **`MathHelper` is a dead global.** It is the raw `Mth` class with nothing
-  allow-listed, so *every* call on it is denied. Use JavaScript's built-in
-  `Math` (abs/floor/ceil/round/min/max/pow/sqrt/trig/hypot/random all covered);
+- **`MathHelper` no longer exists.** It used to bind the raw `Mth` class with
+  nothing allow-listed (every call was denied even while it was present), and
+  has now been removed outright. Use JavaScript's built-in `Math`
+  (abs/floor/ceil/round/min/max/pow/sqrt/trig/hypot/random all covered);
   Opal-specific helpers live on the proxies (e.g. `esp.lerp`).
 
 There is no `Java.type` and no way to import a class a script wasn't given —
