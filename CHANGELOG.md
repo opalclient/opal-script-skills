@@ -65,8 +65,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   constants), `ScriptEntity` entity reads, `AttackEvent.getTarget()`, the
   `timer` global, `client.sendChat` / `runCommand`, and the `-1` not-applicable
   sentinel convention.
-- `world.getBlockId(pos)` → registry id (e.g. `"minecraft:stone"`), `null` when
-  the world/pos isn't available — a locale-safe alternative to
+- `world.getBlockId(pos)` → registry id (e.g. `"minecraft:stone"`), non-null —
+  an unloaded position resolves to `"minecraft:air"`, mirroring
+  `getBlockName()`'s sentinel, not a null result. A locale-safe alternative to
   `getBlockName()` for matching, since the latter returns a localized display
   name that breaks substring matching on non-English clients.
 - A pointer to the official public scripts repo,

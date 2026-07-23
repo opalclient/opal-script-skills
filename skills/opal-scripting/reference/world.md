@@ -16,11 +16,14 @@ All take a `BlockPos`.
 - `isAir(pos)` → `boolean`
 - `isReplaceable(pos)` → `boolean` — air, fluid, grass, etc.
 - `isSolid(pos)` → `boolean`
-- `getBlockId(pos)` → `String | null` — registry id, e.g. `"minecraft:stone"`;
-  `null` when the world or block isn't available. **Locale-safe** — unlike
-  `getBlockName()`, which returns a localized display name, a registry id is
-  stable across languages. Prefer `getBlockId` whenever you're matching a
-  block (`=== "minecraft:stone"`, substring checks, etc.); reach for
+- `getBlockId(pos)` → `String` — registry id, e.g. `"minecraft:stone"`. An
+  unloaded/out-of-range position resolves to `"minecraft:air"` — the same
+  sentinel resolution `getBlockName()` uses — rather than a null result. Like
+  every `world.*` method, it is not itself null-safe: call it behind the usual
+  `mc.getPlayer() === null || mc.getWorld() === null` guard. **Locale-safe** —
+  unlike `getBlockName()`, which returns a localized display name, a registry
+  id is stable across languages. Prefer `getBlockId` whenever you're matching
+  a block (`=== "minecraft:stone"`, substring checks, etc.); reach for
   `getBlockName` only when displaying text to the player.
 - `getBlockName(pos)` → `String` — localized display name.
 - `getBlockHardness(pos)` → `float` — breaking hardness; `-1` means
