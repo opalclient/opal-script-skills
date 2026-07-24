@@ -1,7 +1,7 @@
-# Core proxies — client, notification, overlay, modules, mc, timer
+# Core proxies — client, notification, overlay, modules, mc, net, timer
 
 General client interaction, notifications, HUD islands, module control, the
-null-safe Minecraft facade, and stopwatches. See
+null-safe Minecraft facade, curated packet sends, and stopwatches. See
 [`../reference.md`](../reference.md) for the module/settings/event model and
 back to [`../SKILL.md`](../SKILL.md) for the overview.
 
@@ -233,6 +233,54 @@ module.on("preGameTick", () => {
 
     client.print("Health: " + player.getHealth());
 });
+```
+
+---
+
+## Net
+
+**Global binding:** `net`
+
+Curated serverbound packet sends — a script sends a handful of real vanilla
+packets directly, rather than going through a higher-level proxy method.
+Every send here is a genuine packet over the network connection (a no-op
+with no connection) and is subject to the same `sendPacket`/
+`instantaneousSendPacket` events as any other outbound packet.
+
+**Invalid input throws.** An unrecognized action/mode string or an
+out-of-range numeric parameter throws a host exception whose message lists
+the valid values — still catchable in a script's `try`/`catch` (`e.message`
+carries the list).
+
+- `swing(hand)` — sends a server-only "ghost" swing (`MAIN_HAND` /
+  `OFF_HAND`). Unlike `player.swingHand()`, no local swing animation plays.
+- `heldSlot(slot)` — sends a raw carried-item packet. `slot` must be `0`-`8`;
+  out of range throws.
+- `playerCommand(action)` — sends a player-command packet. `action` is one of
+  `"stopSleeping"`, `"startSprinting"`, `"stopSprinting"`,
+  `"startRidingJump"`, `"stopRidingJump"`, `"openInventory"`,
+  `"startFallFlying"`.
+- `playerAction(action)` — sends a player-action packet for a position-free
+  action: `"dropAllItems"`, `"dropItem"`, `"releaseUseItem"`,
+  `"swapItemWithOffhand"`. A dig action here throws — use the 3-argument form.
+- `playerAction(action, blockPos, face)` — required form for a dig action
+  (`"startDestroyBlock"`, `"stopDestroyBlock"`, `"abortDestroyBlock"`);
+  `blockPos` is a `BlockPos`, `face` a `ScriptDirection`. A position-free
+  action accepts but ignores both.
+- `slotClick(slot, button, mode)` — routes a click through the currently open
+  container menu (no-op if none is open). `button` must be non-negative;
+  `mode` is one of `"pickup"`, `"quickMove"`, `"swap"`, `"clone"`,
+  `"throw"`, `"quickCraft"`, `"pickupAll"`. Gated by the cancellable
+  `preSlotClick` event (same vanilla path as a real inventory click) — see
+  [`../reference.md`](../reference.md#events).
+
+```js
+// Ghost-swing the off hand, then flick to hotbar slot 3.
+net.swing(OFF_HAND);
+net.heldSlot(3);
+
+// Quick-move whatever is in container slot 0.
+net.slotClick(0, 0, "quickMove");
 ```
 
 ---

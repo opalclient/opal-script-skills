@@ -57,6 +57,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Documentation for the `net` proxy (`swing`, `heldSlot`, `playerCommand`,
+  `playerAction`, `slotClick` — curated serverbound packet sends, with the
+  exact action/mode string sets and the throw-on-invalid-input contract),
+  `mc.interactionManager.interactEntity(entity, hand)`, and five cancellable
+  pre-action events (`preBlockPlace`, `preUseItem`, `preAttack`,
+  `preInteractEntity`, `preSlotClick`) — added to `SKILL.md`, `reference.md`'s
+  event table, `reference/core.md`, and `reference/character.md`.
 - `renderer.drawPlayerHead(entity, x, y, size)` (skin face + hat overlay;
   silent no-op for a non-player/unresolvable entity), `player.getAttackCooldown()`
   (attack strength scale `0.0`–`1.0`; `1.0` with no local player), and five new

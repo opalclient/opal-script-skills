@@ -21,7 +21,7 @@ This skill is the source of truth. Companion files go deeper:
 
 - `reference.md` — the module/settings/event model index, plus the `keys` table.
 - `reference/core.md` — `client`, `notification`, `overlay`, `modules`, `mc`,
-  `timer`, and `ScriptList`.
+  `net`, `timer`, and `ScriptList`.
 - `reference/character.md` — `player`, `movement`, `rotation`, `inventory`, and
   `mc.interactionManager`.
 - `reference/world.md` — `world`, `esp`, the class globals (`BlockPos`, `Vec2f`,
@@ -158,7 +158,10 @@ Subscribe with `module.on("eventName", callback)`. Some events hand you an
 - **Movement:** `preMove`, `postMove`, `jump` *(cancellable)*.
 - **Input:** `keyPress`, `mousePress` (`event.getCode()` → GLFW code).
 - **Player actions:** `attack` (`event.getTarget()` → `ScriptEntity`), `swing`
-  (`event.isMainHand()`), `itemUse`.
+  (`event.isMainHand()`), `itemUse`, plus five cancellable pre-action events —
+  `preBlockPlace`, `preUseItem`, `preAttack`, `preInteractEntity`,
+  `preSlotClick` — each firing before its vanilla action is processed and
+  exposing `event.cancel()` / `event.isCancelled()`.
 - **Chat:** `chatReceived` *(cancellable — `event.cancel()` suppresses the line;
   `event.getMessage()` is the plain-text line)*.
 - **Misc:** `resolutionChange`.
@@ -183,7 +186,7 @@ full payload table.
 
 Scripts get these proxy globals (no import needed): `client`, `player`, `world`,
 `inventory`, `movement`, `rotation`, `renderer`, `overlay`, `esp`, `modules`,
-`notification`, `mc`, `palette`, `timer`, `keys`. See `reference/core.md`,
+`notification`, `mc`, `net`, `palette`, `timer`, `keys`. See `reference/core.md`,
 `reference/character.md`, `reference/world.md`, and `reference/ui.md` for full
 member tables.
 
@@ -215,7 +218,13 @@ that is deliberate. See `reference/world.md` for the full picture.
 
 `mc.interactionManager` wraps block/entity interaction: `interactBlock`,
 `updateBlockBreakingProgress`, `cancelBlockBreaking`, `isBreakingBlock`,
-`attackEntity`, `interactItem`, `stopUsingItem`. See `reference/character.md`.
+`attackEntity`, `interactEntity`, `interactItem`, `stopUsingItem`. See
+`reference/character.md`.
+
+The `net` global sends a handful of curated serverbound packets directly:
+`swing`, `heldSlot`, `playerCommand`, `playerAction`, `slotClick`. An invalid
+action/mode string throws (still catchable in a script's `try`/`catch`); see
+`reference/core.md` for the exact valid-value sets.
 
 ## Entities, effects, and timers
 

@@ -358,7 +358,12 @@ automatically, and every method is null-guarded internally.
 
 ### Entity & item interaction
 
-- `attackEntity(entity)` — attacks the given `ScriptEntity` with the main hand.
+- `attackEntity(entity)` — attacks the given `ScriptEntity` with the main
+  hand. Gated by the cancellable `preAttack` event — a handler that cancels
+  it blocks this call too.
+- `interactEntity(entity, hand)` — right-clicks (interacts with) the given
+  `ScriptEntity` with the given hand — the right-click equivalent of
+  `attackEntity`. Gated by the cancellable `preInteractEntity` event.
 - `interactItem(hand)` — right-click use without targeting (throw a pearl,
   eat, etc.).
 - `stopUsingItem()` — stops current use (release a bow, stop eating).
@@ -372,6 +377,12 @@ player.swingHand(MAIN_HAND);
 const targets = world.getLivingEntitiesInRange(5.0);
 if (!targets.isEmpty()) {
     mc.interactionManager.attackEntity(targets.get(0));
+    player.swingHand(MAIN_HAND);
+}
+
+// Right-click the closest living entity instead (trade with a villager, etc.).
+if (!targets.isEmpty()) {
+    mc.interactionManager.interactEntity(targets.get(0), MAIN_HAND);
     player.swingHand(MAIN_HAND);
 }
 ```

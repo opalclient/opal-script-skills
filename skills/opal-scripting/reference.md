@@ -7,7 +7,7 @@ This file covers the entry point, the module/settings/event model, and the
 `keys` constants. The proxy globals themselves are split by category:
 
 - [`reference/core.md`](reference/core.md) — `client`, `notification`,
-  `overlay`, `modules`, `mc`, `timer`, and `ScriptList`.
+  `overlay`, `modules`, `mc`, `net`, `timer`, and `ScriptList`.
 - [`reference/character.md`](reference/character.md) — `player`, `movement`,
   `rotation`, `inventory`, and `mc.interactionManager`.
 - [`reference/world.md`](reference/world.md) — `world`, `esp`, the class globals
@@ -105,6 +105,11 @@ you need from the globals (`client.getTickDelta()` for the partial tick).
 | `postMovementPacket` | `getX/Y/Z()`, `getYaw/Pitch()`, `isOnGround()`, `isSprinting()` | no | After the movement packet was sent — read-only, describes what was actually sent. |
 | `sendPacket` / `receivePacket` | `getType()` | yes | Around batched (main-thread) packet I/O. `getType()` is the packet's simple class name, e.g. `"ServerboundMovePlayerPacket"`. |
 | `instantaneousSendPacket` / `instantaneousReceivePacket` | `getType()` | yes | Around immediate (network-thread) packet I/O. |
+| `preBlockPlace` | `getHand()` (`"main"`/`"off"`), `getX/Y/Z()`, `getFace()` (lowercase, e.g. `"up"`), `isInside()` | yes | Before a block-placement / right-click-on-block interaction (`mc.interactionManager.interactBlock()`) is processed. |
+| `preUseItem` | `getHand()` (`"main"`/`"off"`) | yes | Before the held item is used (right-click use). `getHand()` reports `"main"` by convention — the vanilla method this fires from evaluates both hands internally and does not report which one. |
+| `preAttack` | `getTargetId()`, `getTargetType()` (namespaced id, e.g. `"minecraft:zombie"`), `getTargetName()` | yes | Before the player's attack on an entity is processed. Also gates `mc.interactionManager.attackEntity()`. |
+| `preInteractEntity` | `getTargetId()`, `getTargetType()`, `getHand()` (`"main"`/`"off"`) | yes | Before a right-click interaction on an entity is processed. Also gates `mc.interactionManager.interactEntity()`. |
+| `preSlotClick` | `getContainerId()`, `getSlot()`, `getButton()`, `getMode()` (camelCase, same token set as `net.slotClick`'s `mode`) | yes | Before a container slot click is processed. Also gates `net.slotClick()` — same vanilla path. |
 | `attack` | `getTarget()` → `ScriptEntity`, `getTargetName()`, `getTargetId()`, `getTargetHealth()`, `getTargetMaxHealth()`, `getTargetDistance()` | no | Player attacks an entity, before the interaction is processed. The flattened getters are shortcuts for the target's reads; health/distance are `-1` when not applicable. |
 | `swing` | `isMainHand()` | no | Player swings an arm, before the swing is sent. |
 | `itemUse` | _(no payload)_ | no | Player uses (right-clicks) the held item. |
