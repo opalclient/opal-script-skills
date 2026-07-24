@@ -78,6 +78,12 @@ with the same path are cheap.
 - `image(image, x, y, w, h, radius)`
 - `imageTinted(image, x, y, w, h, radius, tint)` — `radius` comes before
   `tint`.
+- `drawPlayerHead(entity, x, y, size)` — draws a `ScriptEntity`'s skin face
+  (with the hat overlay layered on top) into the square `(x, y, size, size)`.
+  **Silent no-op** — draws nothing — when `entity` is `null`, the entity isn't
+  a player, or its skin can't be resolved; there is no error and no thrown
+  exception, so check `entity.isPlayer()` first if you need to tell the
+  difference from "drew, but tiny".
 
 Vector paths:
 

@@ -57,6 +57,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `renderer.drawPlayerHead(entity, x, y, size)` (skin face + hat overlay;
+  silent no-op for a non-player/unresolvable entity), `player.getAttackCooldown()`
+  (attack strength scale `0.0`–`1.0`; `1.0` with no local player), and five new
+  `ScriptEntity` reads: `getHurtTime()` (`0` for a non-living entity — not the
+  `-1` health-block sentinel), `getPing()` (`-1` for a non-player/unknown, keyed
+  off `isPlayer()`), `getMainHandItem()` / `getOffHandItem()` (`null` for a
+  non-living entity; wrapped empty stack for an empty hand), and
+  `getArmorItems()` (feet → legs → chest → head, always 4 entries for a living
+  entity — humanoid slots only; empty list otherwise).
 - Documentation for the newer API surface: status effects (`player.hasEffect` /
   `getEffect` / `getEffects` and `ScriptEffect`, including the 0-based
   `getAmplifier()` vs 1-based `getLevel()` convention and the `-1`

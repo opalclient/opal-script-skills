@@ -68,6 +68,11 @@ if (!player.hasEffect("speed")) {
 - `canCrit()` → `boolean` — whether the next attack would be a critical hit
   (falling, not on ground, not in water, etc.).
 - `getAttackDamage()` → `double` — main-hand attack damage.
+- `getAttackCooldown()` → `double` — attack strength scale, `0.0` right after
+  swinging rising to `1.0` once fully recharged (gate a KillAura-style hit on
+  it approaching `1.0`). **`1.0` (fully charged) when there is no local
+  player** — the one entity read here that answers a full-charge sentinel
+  instead of `-1`.
 - `getEntityInteractionRange()` → `double` — max attack/interact distance.
 - `isHoldingWeapon()` → `boolean` — sword, axe, or pickaxe in main hand.
 

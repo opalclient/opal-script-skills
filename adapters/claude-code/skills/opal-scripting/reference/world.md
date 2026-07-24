@@ -263,7 +263,9 @@ back to any proxy method that takes an entity (`esp.getEntityBox2D`,
 
 Reads that don't apply to this entity return **`-1`** rather than throwing —
 `getHealth()`, `getMaxHealth()`, `getAbsorption()` and `getArmor()` on a
-non-living entity, for example. Check the sentinel.
+non-living entity, for example. Check the sentinel. `getHurtTime()`,
+`getPing()`, and the hand/armor reads below each have their own sentinel —
+see each bullet.
 
 - Identity: `getName()` → `String` (a **plain string** — there is no
   `.getString()` on it), `getId()` → `int`, `getUuid()` → `String`.
@@ -274,6 +276,20 @@ non-living entity, for example. Check the sentinel.
   `getArmor()` → `int`.
 - Effects: `hasEffect(name)` → `boolean`, `getEffect(name)` →
   `ScriptEffect | null`, `getEffects()` → `ScriptList<ScriptEffect>`.
+- Combat: `getHurtTime()` → `int` — ticks left in the red hurt-flash. **`0`
+  for a non-living entity** — unlike the health block above, this does not use
+  the `-1` sentinel. `getPing()` → `int` — player-list latency in
+  milliseconds; **`-1`** for a non-player entity, no active connection, or a
+  player absent from the connection's player list (this one keys off
+  `isPlayer()`, not `isLiving()`).
+- Equipment: `getMainHandItem()` / `getOffHandItem()` → `ScriptItemStack |
+  null` — **`null` for a non-living entity**; a living entity with an empty
+  hand yields the wrapped **empty** stack (`isEmpty()` `true`), never `null`
+  (mirrors `inventory.getMainHandStack()` / `getOffHandStack()`).
+  `getArmorItems()` → `ScriptList<ScriptItemStack>` — worn armor ordered
+  **feet → legs → chest → head**. A living entity always yields exactly **4**
+  entries (humanoid slots only; empty slots are wrapped empty stacks, not
+  skipped) — a non-living entity yields an empty list.
 
 ```js
 const entities = world.getLivingEntitiesInRange(16);
